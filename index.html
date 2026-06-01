@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Reader</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c;
+    --surface: #1a1917;
+    --surface2: #232220;
+    --border: #2e2c29;
+    --accent: #c9a96e;
+    --accent-dim: #8a6d3f;
+    --text: #e8e4dc;
+    --text-dim: #8a877f;
+    --text-muted: #4a4845;
+    --danger: #c96e6e;
+    --success: #6ec98a;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); font-family: 'Lora', Georgia, serif; min-height: 100vh; }
+  .app { max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; }
+  .masthead { text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .masthead h1 { font-size: 28px; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+  .masthead p { font-size: 13px; color: var(--text-muted); font-family: 'DM Mono', monospace; margin-top: 6px; font-style: italic; }
+  .section { margin-bottom: 24px; }
+  .section-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .key-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .key-row { display: flex; gap: 8px; }
+  .key-row input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; font-size: 13px; font-family: 'DM Mono', monospace; color: var(--text); outline: none; transition: border-color 0.2s; }
+  .key-row input:focus { border-color: var(--accent-dim); }
+  .key-row input::placeholder { color: var(--text-muted); }
+  .btn-save { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 9px 16px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-dim); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .btn-save:active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .key-hint { font-size: 11px; font-family: 'DM Mono', monospace; margin-top: 8px; color: var(--text-muted); }
+  .key-hint a { color: var(--accent-dim); text-decoration: none; }
+  .key-hint.saved { color: var(--success); }
+   width: 100%; height: 200px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; font-size: 15px; line-height: 1.7; font-family: 'Lora', Georgia, serif; color: var(--text); resize: vertical; outline: none; transition: border-color 0.2s; }
+  textarea:focus { border-color: var(--accent-dim); }
+  textarea::placeholder { color: var(--text-muted); font-style: italic; }
+  .char-row { display: flex; justify-content: space-between; margin-top: 6px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
+  .voice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .voice-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; transition: all 0.15s; text-align: left; }
+  .voice-card:active, .voice-card.selected { border-color: var(--accent); background: var(--surface2); }
+  .voice-card.selected .voice-name { color: var(--accent); }
+  .voice-name { font-size: 14px; font-weight: 500; display: block; margin-bottom: 2px; }
+  .voice-desc { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); }
+  .model-row { display: flex; gap: 8px; }
+  .model-btn { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-dim); cursor: pointer; transition: all 0.15s; text-align: center; }
+  .model-btn.selected { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
+  .model-label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 2px; }
+  .model-desc { color: var(--text-muted); font-size: 10px; }
+  .btn-generate { width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: var(--radius); font-size: 15px; font-family: 'Lora', Georgia, serif; font-weight: 500; color: var(--bg); cursor: pointer; letter-spacing: 0.05em; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; }
+  .btn-generate:active { background: var(--accent-dim); transform: scale(0.99); }
+  .btn-generate:disabled { background: var(--text-muted); cursor: not-allowed; transform: none; }
+  .player { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; display: none; margin-top: 16px; }
+  .player.visible { display: block; }
+  .player-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent-dim); margin-bottom: 12px; }
+  audio { width: 100%; border-radius: 6px; accent-color: var(--accent); }
+  .download-link { display: block; text-align: center; margin-top: 10px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); text-decoration: none; padding: 8px; border: 1px solid var(--border); border-radius: 6px; transition: all 0.15s; }
+  .download-link:active { color: var(--accent); border-color: var(--accent); }
+  .error-box { background: rgba(201,110,110,0.08); border: 1px solid rgba(201,110,110,0.3); border-radius: var(--radius); padding: 12px 14px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--danger); display: none; margin-bottom: 12px; line-height: 1.6; }
+  .error-box.visible { display: block; }
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(15,14,12,0.3); border-top-color: var(--bg); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .footer-note { text-align: center; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); line-height: 1.8; }
+  .footer-note a { color: var(--accent-dim); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="masthead">
+    <h1>Reader</h1>
+    <p>text → audio · openai tts</p>
+  </div>
+
+  <div class="section" id="keySection">
+    <div class="section-label">API Key</div>
+    <div class="key-box">
+      <div class="key-row">
+        <input type="password" id="apiKeyInput" placeholder="sk-proj-..." />
+        <button class="btn-save" onclick="saveKey()">Save</button>
+      </div>
+      <div class="key-hint" id="keyHint">
+        Get a key at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Text</div>
+    <textarea id="textInput" placeholder="Paste your article or any text here…" oninput="updateCount()"></textarea>
+    <div class="char-row">
+      <span id="charCount">0 characters</span>
+      <span id="costEst">~$0.000</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Voice</div>
+    <div class="voice-grid">
+      <div class="voice-card selected" onclick="selectVoice(this, 'alloy')">
+        <span class="voice-name">Alloy</span>
+        <span class="voice-desc">Neutral · Balanced</span>
+      </div>
+      <div class="voice-card" onclick="selectVoice(this, 'nova')">
+        <span class="voice-name">Nova</span>
+        <span class="voice-desc">Warm · Female</span>
+      </div>
+      <div class="voice-card" onclick="selectVoice(this, 'onyx')">
+        <span class="voice-name">Onyx</span>
+        <span class="voice-desc">Deep · Male</span>
+      </div>
+      <div class="voice-card" onclick="selectVoice(this, 'shimmer')">
+        <span class="voice-name">Shimmer</span>
+        <span class="voice-desc">Clear · Female</span>
+      </div>
+      <div class="voice-card" onclick="selectVoice(this, 'echo')">
+        <span class="voice-name">Echo</span>
+        <span class="voice-desc">Crisp · Male</span>
+      </div>
+      <div class="voice-card" onclick="selectVoice(this, 'fable')">
+        <span class="voice-name">Fable</span>
+        <span class="voice-desc">Expressive · Male</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Quality</div>
+    <div class="model-row">
+      <div class="model-btn selected" onclick="selectModel(this, 'tts-1-hd')">
+        <span class="model-label">HD</span>
+        <span class="model-desc">Best quality · $0.030/1K chars</span>
+      </div>
+      <div class="model-btn" onclick="selectModel(this, 'tts-1')">
+        <span class="model-label">Standard</span>
+        <span class="model-desc">Fast · $0.015/1K chars</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <button class="btn-generate" id="generateBtn" onclick="generateAudio()">
+    ▶ &nbsp;Generate Audio
+  </button>
+
+  <div class="player" id="playerBox">
+    <div class="player-label">Ready to play</div>
+    <audio id="audioPlayer" controls></audio>
+    <a class="download-link" id="downloadLink" href="#" download="audio.mp3">↓ Save MP3</a>
+  </div>
+
+  <div class="footer-note">
+    OpenAI TTS · pay-as-you-go · no monthly fee<br>
+    Get an API key at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>
+  </div>
+</div>
+
+<script>
+  let OPENAI_KEY = localStorage.getItem('openai_key') || '';
+  let selectedVoice = 'alloy';
+  let selectedModel = 'tts-1-hd';
+  let currentAudioUrl = null;
+
+  if (OPENAI_KEY) {
+    document.getElementById('keyHint').textContent = '✓ Key saved on this device';
+    document.getElementById('keyHint').className = 'key-hint saved';
+  }
+
+  function saveKey() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (!val) return;
+    OPENAI_KEY = val;
+    localStorage.setItem('openai_key', val);
+    document.getElementById('apiKeyInput').value = '';
+    document.getElementById('keyHint').textContent = '✓ Key saved on this device';
+    document.getElementById('keyHint').className = 'key-hint saved';
+  }
+
+  function selectVoice(el, voice) {
+    document.querySelectorAll('.voice-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedVoice = voice;
+  }
+
+  function selectModel(el, model) {
+    document.querySelectorAll('.model-btn').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedModel = model;
+    updateCount();
+  }
+
+  function updateCount() {
+    const len = document.getElementById('textInput').value.length;
+    document.getElementById('charCount').textContent = len.toLocaleString() + ' characters';
+    const rate = selectedModel === 'tts-1-hd' ? 0.030 : 0.015;
+    document.getElementById('costEst').textContent = '~$' + (len / 1000 * rate).toFixed(3);
+  }
+
+  async function generateAudio() {
+    const text = document.getElementById('textInput').value.trim();
+    const btn = document.getElementById('generateBtn');
+    const errorBox = document.getElementById('errorBox');
+    const playerBox = document.getElementById('playerBox');
+
+    errorBox.className = 'error-box';
+    errorBox.textContent = '';
+
+    if (!text) { showError('Please paste some text first.'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Generating…';
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/audio/speech', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + OPENAI_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: selectedModel,
+          input: text,
+          voice: selectedVoice,
+          response_format: 'mp3'
+        })
+      });
+
+      if (!response.ok) {
+        let msg = 'API error ' + response.status;
+        try { const e = await response.json(); msg = e.error?.message || msg; } catch {}
+        throw new Error(msg);
+      }
+
+      const blob = await response.blob();
+      if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
+      currentAudioUrl = URL.createObjectURL(blob);
+
+      const audio = document.getElementById('audioPlayer');
+      audio.src = currentAudioUrl;
+      document.getElementById('downloadLink').href = currentAudioUrl;
+      playerBox.className = 'player visible';
+      audio.play();
+
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '▶ &nbsp;Generate Audio';
+    }
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = msg;
+    box.className = 'error-box visible';
+  }
+</script>
+</body>
+</html>
