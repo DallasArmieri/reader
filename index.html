@@ -139,6 +139,13 @@
   .annotated-text { color: var(--text-dim); }
   .clear-parse { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); cursor: pointer; background: none; border: none; padding: 0; }
   .clear-parse:active { color: var(--danger); }
+  .speaker-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+  .speaker-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+  .speaker-row:last-child { border-bottom: none; }
+  .speaker-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .speaker-name { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .speaker-name.is-narrator { color: var(--text-muted); font-style: italic; }
+  .speaker-voice-select { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text); outline: none; cursor: pointer; flex-shrink: 0; }
 
   /* Emotion preview chunks */
   .emotion-chunk { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; }
@@ -291,12 +298,12 @@
   <div class="panel" id="panel-voiceplus">
 
     <div class="section">
-      <div class="section-label">Emotion Analysis</div>
+      <div class="section-label">Emotion Parse</div>
       <div class="key-box">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div>
-            <div style="font-size:14px;color:var(--text);margin-bottom:4px;">Voice+ Mode</div>
-            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);line-height:1.6;">Uses GPT-4o mini to detect emotional tone per chunk and pass voice instructions to TTS for more expressive narration.</div>
+            <div style="font-size:14px;color:var(--text);margin-bottom:4px;">Emotion Parse</div>
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);line-height:1.6;">Uses GPT-4o mini to detect emotional tone per segment and pass voice instructions to TTS for more expressive narration.</div>
           </div>
           <label class="toggle" style="flex-shrink:0;margin-left:16px;">
             <input type="checkbox" id="voicePlusToggle" onchange="toggleVoicePlus(this.checked)">
@@ -304,7 +311,7 @@
           </label>
         </div>
         <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent-dim);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-          Adds ~1 extra API call per chunk · small extra cost
+          Adds ~1 extra API call per segment · small extra cost
         </div>
       </div>
     </div>
@@ -318,19 +325,81 @@
         <option value="chunk">Chapter Chunk — fastest, ~4000 chars</option>
       </select>
       <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:8px;line-height:1.7;" id="granularityHint">
-        Each paragraph gets its own emotion analysis and TTS call. Good balance of expressiveness and speed.
+        Each line gets its own emotion analysis and TTS call.
+      </div>
+    </div>
+
+    <div class="section" id="multiVoiceSection" style="display:none;">
+      <div class="section-label">Multi-Voice</div>
+      <div class="key-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:14px;color:var(--text);margin-bottom:4px;">Character voices</div>
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);line-height:1.6;">Assign different voices to narrator and characters.</div>
+          </div>
+          <label class="toggle" style="flex-shrink:0;margin-left:16px;">
+            <input type="checkbox" id="multiVoiceToggle" onchange="toggleMultiVoiceSection(this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div id="multiVoiceContent" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+          <div class="model-row" style="margin-bottom:12px;">
+            <div class="model-btn selected" id="modeNarrator" onclick="setVoiceMode('narrator')">
+              <span class="model-label">Narrator</span>
+              <span class="model-desc">Narrator + dialogue voices</span>
+            </div>
+            <div class="model-btn" id="modeVoice" onclick="setVoiceMode('voice')">
+              <span class="model-label">Voice</span>
+              <span class="model-desc">Per-character detection</span>
+            </div>
+          </div>
+
+          <!-- Narrator mode selectors -->
+          <div id="narratorModeUI">
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:6px;letter-spacing:0.1em;text-transform:uppercase;">Narrator voice</div>
+            <select class="styled-select" id="narratorVoice" style="margin-bottom:12px;">
+              <option value="onyx">Onyx — Deep Male</option>
+              <option value="alloy">Alloy — Neutral</option>
+              <option value="echo">Echo — Crisp Male</option>
+              <option value="fable">Fable — Expressive Male</option>
+              <option value="nova">Nova — Warm Female</option>
+              <option value="shimmer">Shimmer — Clear Female</option>
+              <option value="coral">Coral — Friendly Female</option>
+              <option value="sage">Sage — Calm Male</option>
+            </select>
+            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:6px;letter-spacing:0.1em;text-transform:uppercase;">Dialogue voice</div>
+            <select class="styled-select" id="dialogueVoice">
+              <option value="nova">Nova — Warm Female</option>
+              <option value="alloy">Alloy — Neutral</option>
+              <option value="shimmer">Shimmer — Clear Female</option>
+              <option value="coral">Coral — Friendly Female</option>
+              <option value="onyx">Onyx — Deep Male</option>
+              <option value="echo">Echo — Crisp Male</option>
+              <option value="fable">Fable — Expressive Male</option>
+              <option value="sage">Sage — Calm Male</option>
+            </select>
+          </div>
+
+          <!-- Voice mode: speaker table (shown after parse) -->
+          <div id="voiceModeUI" style="display:none;">
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);line-height:1.7;margin-bottom:10px;">
+              Parse Emotion will detect speakers and auto-assign voices. You can adjust any assignment before generating.
+            </div>
+            <div id="speakerTable" style="display:none;"></div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="section">
       <div class="section-label">How it works</div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);line-height:1.9;">
-        1. Toggle Voice+ on and choose granularity<br>
-        2. Paste text on the Read tab<br>
-        3. Hit <span style="color:var(--success);">✦ Parse Emotion</span> above the text box<br>
-        4. Green tags appear showing detected emotion per segment<br>
-        5. Hit Generate — each segment gets its own expressive TTS call<br><br>
-        <span style="color:var(--accent-dim);">Sentence mode</span> is more expressive but slower to generate.
+        1. Toggle Emotion Parse on and choose granularity<br>
+        2. Optionally enable Multi-Voice and pick a mode<br>
+        3. Paste text on the Read tab<br>
+        4. Hit <span style="color:var(--success);">✦ Parse Emotion</span> above the text box<br>
+        5. Green tags appear showing detected emotion per segment<br>
+        6. Hit Generate — each segment gets its own expressive TTS call
       </div>
     </div>
 
@@ -370,17 +439,17 @@
       <div class="section-label">Bookmarklet</div>
       <div class="key-box">
         <p style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);line-height:1.7;margin-bottom:12px;">
-          Tap <strong style="color:var(--text)">Send to Reader</strong> on any Royal Road chapter to send it straight to this app.
+          Tap <strong style="color:var(--text)">Send to Reader</strong> on any page to send it straight to this app.
         </p>
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);word-break:break-all;line-height:1.5;user-select:all;" id="bookmarkletCode"></div>
         <p style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);line-height:1.7;margin-top:12px;">
           <strong style="color:var(--text-dim)">To install on iPhone:</strong><br>
           1. Tap the code above to select it, then copy<br>
-          2. In Safari, bookmark any page<br>
+          2. In Safari/Chrome, bookmark any page<br>
           3. Open Bookmarks → Edit that bookmark<br>
           4. Replace the URL with the copied code<br>
           5. Rename it "Send to Reader"<br>
-          6. On any Royal Road chapter, tap the bookmark
+          6. On any page, tap the bookmark
         </p>
       </div>
     </div>
@@ -666,9 +735,54 @@
   function toggleVoicePlus(enabled) {
     voicePlusEnabled = enabled;
     parsedEmotionChunks = null;
+    speakerMap = {};
     document.getElementById('parseSection').style.display = enabled ? 'block' : 'none';
+    document.getElementById('multiVoiceSection').style.display = enabled ? 'block' : 'none';
     document.getElementById('parseShortcut').style.display = enabled ? 'block' : 'none';
-    if (!enabled) clearParse();
+    if (!enabled) {
+      clearParse();
+      document.getElementById('multiVoiceToggle').checked = false;
+      document.getElementById('multiVoiceContent').style.display = 'none';
+    }
+  }
+
+  // voice mode: 'off' | 'narrator' | 'voice'
+  let voiceMode = 'narrator';
+  // speakerMap: { speakerName: voiceId }
+  let speakerMap = {};
+
+  const VOICE_OPTIONS = ['alloy','echo','fable','onyx','nova','shimmer','coral','sage'];
+  const VOICE_LABELS = { alloy:'Alloy',echo:'Echo',fable:'Fable',onyx:'Onyx',nova:'Nova',shimmer:'Shimmer',coral:'Coral',sage:'Sage' };
+  const VOICE_COLORS = { alloy:'#8a877f',echo:'#6e9bc9',fable:'#c96e9b',onyx:'#4a4845',nova:'#c9a96e',shimmer:'#9bc96e',coral:'#c9756e',sage:'#6ec9b8' };
+
+  function voiceSelectHTML(id, selected) {
+    return `<select class="speaker-voice-select" id="${id}" onchange="updateSpeakerVoice('${id}',this.value)">
+      ${VOICE_OPTIONS.map(v => `<option value="${v}"${v===selected?' selected':''}>${VOICE_LABELS[v]}</option>`).join('')}
+    </select>`;
+  }
+
+  function updateSpeakerVoice(id, val) {
+    speakerMap[id] = val;
+  }
+
+  function toggleMultiVoiceSection(enabled) {
+    document.getElementById('multiVoiceContent').style.display = enabled ? 'block' : 'none';
+    if (!enabled) {
+      parsedEmotionChunks = null;
+      speakerMap = {};
+      clearParse();
+    }
+  }
+
+  function setVoiceMode(mode) {
+    voiceMode = mode;
+    document.getElementById('modeNarrator').classList.toggle('selected', mode === 'narrator');
+    document.getElementById('modeVoice').classList.toggle('selected', mode === 'voice');
+    document.getElementById('narratorModeUI').style.display = mode === 'narrator' ? 'block' : 'none';
+    document.getElementById('voiceModeUI').style.display = mode === 'voice' ? 'block' : 'none';
+    parsedEmotionChunks = null;
+    speakerMap = {};
+    clearParse();
   }
 
   function updateGranularityHint() {
@@ -714,6 +828,80 @@
     return groups;
   }
 
+  function isDialogue(text) {
+    const quoteContent = (text.match(/["""][^"""]+["""]/g) || []).join('');
+    return quoteContent.length > text.length * 0.4;
+  }
+
+  async function detectSpeakers(fullText) {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        max_tokens: 300,
+        messages: [{
+          role: 'user',
+          content: `Identify all distinct speakers in this text. Include "Narrator" as a speaker for non-dialogue. For each speaker, guess their gender/personality from context to help pick a voice.
+
+Reply with JSON only, no markdown:
+{"speakers": [{"name": "Narrator", "hint": "calm authoritative male"}, {"name": "Character Name", "hint": "young energetic female"}]}
+
+Text (first 2000 chars):
+${fullText.slice(0, 2000)}`
+        }]
+      })
+    });
+    if (!res.ok) throw new Error('Speaker detection failed');
+    const data = await res.json();
+    const raw = data.choices[0].message.content.trim().replace(/```json|```/g, '');
+    const parsed = JSON.parse(raw);
+    return parsed.speakers || [];
+  }
+
+  function autoAssignVoices(speakers) {
+    const pool = [...VOICE_OPTIONS];
+    // Shuffle pool for variety
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const map = {};
+    const femaleHints = ['female','woman','girl','she','her'];
+    const malePool = ['onyx','echo','fable','sage','alloy'];
+    const femalePool = ['nova','shimmer','coral','alloy','fable'];
+    let mi = 0, fi = 0;
+    speakers.forEach(s => {
+      const hint = (s.hint || '').toLowerCase();
+      const isFemale = femaleHints.some(h => hint.includes(h));
+      if (isFemale) {
+        map[s.name] = femalePool[fi % femalePool.length]; fi++;
+      } else {
+        map[s.name] = malePool[mi % malePool.length]; mi++;
+      }
+    });
+    // Narrator always gets a distinct voice
+    if (map['Narrator']) map['Narrator'] = 'onyx';
+    return map;
+  }
+
+  function renderSpeakerTable(speakers, map) {
+    const table = document.getElementById('speakerTable');
+    table.style.display = 'block';
+    table.innerHTML = `<div class="speaker-table-wrap">${
+      speakers.map(s => {
+        const voice = map[s.name] || 'alloy';
+        const color = VOICE_COLORS[voice] || '#8a877f';
+        const isNarr = s.name === 'Narrator';
+        return `<div class="speaker-row">
+          <div class="speaker-dot" style="background:${color};"></div>
+          <div class="speaker-name${isNarr ? ' is-narrator' : ''}">${s.name}</div>
+          ${voiceSelectHTML(s.name, voice)}
+        </div>`;
+      }).join('')
+    }</div>`;
+  }
+
   async function parseEmotion() {
     const text = document.getElementById('textInput').value.trim();
     if (!text) { alert('Paste some text on the Read tab first.'); return; }
@@ -726,13 +914,70 @@
 
     const mode = getGranularity();
     const rawSegments = splitByGranularity(text, mode);
-    // Normalise to plain strings
     const segments = rawSegments.map(s => typeof s === 'string' ? s : s.text);
 
     try {
+      // ── Voice mode: detect speakers first ────────────────
+      const multiVoiceOn = document.getElementById('multiVoiceToggle')?.checked;
+      if (voicePlusEnabled && multiVoiceOn && voiceMode === 'voice') {
+        if (content) content.innerHTML = `<div class="spinner-sm"></div> Detecting speakers…`;
+        const speakers = await detectSpeakers(text);
+        const autoMap = autoAssignVoices(speakers);
+        // Merge with any existing user overrides
+        speakerMap = { ...autoMap, ...speakerMap };
+        renderSpeakerTable(speakers, speakerMap);
+      }
+
+      // ── Emotion analysis per segment ──────────────────────
       const results = [];
       for (let i = 0; i < segments.length; i++) {
         if (content) content.innerHTML = `<div class="spinner-sm"></div> ${i+1}/${segments.length}`;
+
+        // Determine voice for this segment
+        let segVoice = selectedVoice;
+        const multiVoiceOn = document.getElementById('multiVoiceToggle')?.checked;
+        if (voicePlusEnabled && multiVoiceOn) {
+          if (voiceMode === 'narrator') {
+            const narratorVoice = document.getElementById('narratorVoice')?.value || selectedVoice;
+            const dialogueVoice = document.getElementById('dialogueVoice')?.value || selectedVoice;
+            segVoice = isDialogue(segments[i]) ? dialogueVoice : narratorVoice;
+          } else if (voiceMode === 'voice') {
+            // Ask GPT which speaker this segment belongs to
+            const speakerNames = Object.keys(speakerMap).join(', ');
+            const speakerRes = await fetch('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                max_tokens: 60,
+                messages: [{
+                  role: 'user',
+                  content: `Who is the primary speaker in this passage? Choose from: ${speakerNames}. Reply with JSON only: {"speaker": "Name", "emotion": "<one word>", "instruction": "<TTS voice instruction max 10 words>"}
+
+Text: ${segments[i].slice(0, 400)}`
+                }]
+              })
+            });
+            if (speakerRes.ok) {
+              const sd = await speakerRes.json();
+              try {
+                const sp = JSON.parse(sd.choices[0].message.content.trim().replace(/```json|```/g,''));
+                const assignedSpeaker = sp.speaker || 'Narrator';
+                segVoice = speakerMap[assignedSpeaker] || selectedVoice;
+                results.push({
+                  text: segments[i],
+                  emotion: sp.emotion || 'neutral',
+                  instruction: sp.instruction || 'read naturally',
+                  voice: segVoice,
+                  speaker: assignedSpeaker
+                });
+                continue;
+              } catch(e) {}
+            }
+          }
+        }
+
+        // Standard emotion analysis (narrator mode or fallback)
         const res = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
@@ -757,7 +1002,13 @@ Text: ${segments[i].slice(0, 600)}`
         } catch(e) {
           parsed = { emotion: 'neutral', instruction: 'read naturally and clearly' };
         }
-        results.push({ text: segments[i], emotion: parsed.emotion || 'neutral', instruction: parsed.instruction || 'read naturally' });
+        results.push({
+          text: segments[i],
+          emotion: parsed.emotion || 'neutral',
+          instruction: parsed.instruction || 'read naturally',
+          voice: segVoice,
+          speaker: null
+        });
       }
 
       parsedEmotionChunks = results;
@@ -772,18 +1023,27 @@ Text: ${segments[i].slice(0, 600)}`
   }
 
   function renderEmotionPreview(chunks) {
-    // Build annotated view in the Read tab (replaces textarea visually)
     const textarea = document.getElementById('textInput');
     const av = document.getElementById('annotatedView');
     textarea.style.display = 'none';
     av.style.display = 'block';
     av.innerHTML = `<div class="annotated-view">${
-      chunks.map(c => `
+      chunks.map(c => {
+        let tag = '';
+        if (voicePlusEnabled && voiceMode === 'voice' && c.speaker) {
+          const color = VOICE_COLORS[c.voice] || '#8a877f';
+          tag = `<span style="font-family:'DM Mono',monospace;font-size:9px;color:${color};margin-left:6px;">◆ ${c.speaker}</span>`;
+        } else if (voicePlusEnabled && voiceMode === 'narrator') {
+          const isD = isDialogue(c.text);
+          tag = `<span style="font-family:'DM Mono',monospace;font-size:9px;color:${isD?'var(--accent)':'var(--text-muted)'};margin-left:6px;">${isD?'◆ DIALOGUE':'○ NARRATOR'}</span>`;
+        }
+        return `
         <div class="annotated-chunk">
-          <div class="emotion-pill">✦ ${c.emotion.toUpperCase()}</div>
+          <div class="emotion-pill">✦ ${c.emotion.toUpperCase()}${tag}</div>
           <div class="emotion-instr">${c.instruction}</div>
           <div class="annotated-text">${c.text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
-        </div>`).join('')
+        </div>`;
+      }).join('')
     }</div>
     <button class="clear-parse" onclick="clearParse()">× Clear &amp; edit text</button>`;
   }
@@ -805,13 +1065,12 @@ Text: ${segments[i].slice(0, 600)}`
     return chunks;
   }
 
-  async function fetchChunk(text, voiceInstruction) {
-    // OpenAI speed param range is 0.25–4.0; clamp and use for server-side quality rendering
+  async function fetchChunk(text, voiceInstruction, voiceOverride) {
     const apiSpeed = Math.min(4.0, Math.max(0.25, playbackSpeed));
     const body = {
       model: voicePlusEnabled ? 'gpt-4o-mini-tts' : selectedModel,
       input: text,
-      voice: selectedVoice,
+      voice: voiceOverride || selectedVoice,
       response_format: 'mp3',
       speed: apiSpeed
     };
@@ -864,7 +1123,7 @@ Text: ${segments[i].slice(0, 600)}`
         document.getElementById('progressLabel').textContent =
           chunks.length > 1 ? `Generating ${label}…` : 'Generating audio…';
         document.getElementById('progressFill').style.width = (i / chunks.length * 100) + '%';
-        buffers.push(await fetchChunk(chunk.text, chunk.instruction));
+        buffers.push(await fetchChunk(chunk.text, chunk.instruction, chunk.voice));
       }
       document.getElementById('progressFill').style.width = '100%';
 
