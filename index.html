@@ -329,13 +329,13 @@
       </div>
     </div>
 
-    <div class="section" id="multiVoiceSection" style="display:none;">
+    <div class="section">
       <div class="section-label">Multi-Voice</div>
       <div class="key-box">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div>
             <div style="font-size:14px;color:var(--text);margin-bottom:4px;">Character voices</div>
-            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);line-height:1.6;">Assign different voices to narrator and characters.</div>
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);line-height:1.6;">Assign different voices to narrator and characters. Works independently of Emotion Parse.</div>
           </div>
           <label class="toggle" style="flex-shrink:0;margin-left:16px;">
             <input type="checkbox" id="multiVoiceToggle" onchange="toggleMultiVoiceSection(this.checked)">
@@ -439,7 +439,7 @@
       <div class="section-label">Bookmarklet</div>
       <div class="key-box">
         <p style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);line-height:1.7;margin-bottom:12px;">
-          Tap <strong style="color:var(--text)">Send to Reader</strong> on any page to send it straight to this app.
+          Tap <strong style="color:var(--text)">Send to Reader</strong> on any Royal Road chapter to send it straight to this app.
         </p>
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);word-break:break-all;line-height:1.5;user-select:all;" id="bookmarkletCode"></div>
         <p style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);line-height:1.7;margin-top:12px;">
@@ -737,13 +737,8 @@
     parsedEmotionChunks = null;
     speakerMap = {};
     document.getElementById('parseSection').style.display = enabled ? 'block' : 'none';
-    document.getElementById('multiVoiceSection').style.display = enabled ? 'block' : 'none';
     document.getElementById('parseShortcut').style.display = enabled ? 'block' : 'none';
-    if (!enabled) {
-      clearParse();
-      document.getElementById('multiVoiceToggle').checked = false;
-      document.getElementById('multiVoiceContent').style.display = 'none';
-    }
+    if (!enabled) clearParse();
   }
 
   // voice mode: 'off' | 'narrator' | 'voice'
