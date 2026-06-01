@@ -122,10 +122,20 @@
   .toggle input:checked + .toggle-slider { background: var(--accent-dim); border-color: var(--accent); }
   .toggle input:checked + .toggle-slider:before { transform: translateX(18px); background: var(--accent); }
 
-  /* Parse button */
-  .btn-parse { width: 100%; padding: 13px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); font-family: 'DM Mono', monospace; font-size: 13px; color: var(--success); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: 0.05em; }
-  .btn-parse:active { background: var(--surface2); border-color: var(--success); }
-  .btn-parse:disabled { opacity: 0.4; cursor: not-allowed; }
+  /* Parse button - inline fit to text */
+  .btn-parse-inline { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--surface); border: 1px solid rgba(110,201,138,0.4); border-radius: 6px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--success); cursor: pointer; transition: all 0.2s; letter-spacing: 0.04em; }
+  .btn-parse-inline:active { background: var(--surface2); border-color: var(--success); }
+  .btn-parse-inline:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Annotated text view */
+  .annotated-view { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; min-height: 180px; max-height: 420px; overflow-y: auto; font-size: 15px; line-height: 1.7; font-family: 'Lora', Georgia, serif; color: var(--text); }
+  .annotated-chunk { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .annotated-chunk:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+  .emotion-pill { display: inline-flex; align-items: center; gap: 5px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--success); border: 1px solid rgba(110,201,138,0.35); background: rgba(110,201,138,0.08); border-radius: 4px; padding: 2px 8px; margin-bottom: 6px; letter-spacing: 0.06em; }
+  .emotion-instr { font-family: 'DM Mono', monospace; font-size: 10px; color: rgba(110,201,138,0.6); margin-bottom: 8px; font-style: italic; line-height: 1.5; padding-left: 2px; }
+  .annotated-text { color: var(--text-dim); }
+  .clear-parse { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); cursor: pointer; background: none; border: none; padding: 0; }
+  .clear-parse:active { color: var(--danger); }
 
   /* Emotion preview chunks */
   .emotion-chunk { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; }
@@ -184,11 +194,13 @@
     <div class="section">
       <div class="section-label">Text</div>
       <div id="parseShortcut" style="display:none;margin-bottom:8px;">
-        <button class="btn-parse" onclick="parseEmotion()" id="parseShortcutBtn">
+        <button class="btn-parse-inline" onclick="parseEmotion()" id="parseShortcutBtn">
           <span id="parseShortcutContent">✦ Parse Emotion</span>
         </button>
       </div>
-      <textarea id="textInput" placeholder="Paste your article or any text here…" oninput="updateCount()"></textarea>
+      <textarea id="textInput" placeholder="Paste your article or any text here…" oninput="onTextInput()"></textarea>
+      <!-- Annotated view shown after parsing -->
+      <div id="annotatedView" style="display:none;"></div>
       <div class="char-row">
         <span id="charCount">0 characters</span>
         <span id="costEst">~$0.000</span>
@@ -296,7 +308,7 @@
 
     <div class="section" id="parseSection" style="display:none;">
       <div class="section-label">Preview</div>
-      <button class="btn-parse" id="parseBtn" onclick="parseEmotion()">
+      <button class="btn-parse-inline" id="parseBtn" onclick="parseEmotion()">
         <span id="parseBtnContent">✦ Parse Emotion</span>
       </button>
       <div id="emotionPreview" style="display:none;margin-top:12px;"></div>
@@ -615,13 +627,34 @@
   }
 
   // ── Voice+ ────────────────────────────────────────────
+  function onTextInput() {
+    // If annotated view is showing, switching back to textarea clears parse
+    const av = document.getElementById('annotatedView');
+    if (av.style.display !== 'none') {
+      av.style.display = 'none';
+      av.innerHTML = '';
+      document.getElementById('textInput').style.display = '';
+      parsedEmotionChunks = null;
+    }
+    updateCount();
+  }
+
+  function clearParse() {
+    parsedEmotionChunks = null;
+    const av = document.getElementById('annotatedView');
+    av.style.display = 'none';
+    av.innerHTML = '';
+    document.getElementById('textInput').style.display = '';
+    document.getElementById('emotionPreview').style.display = 'none';
+    document.getElementById('emotionPreview').innerHTML = '';
+  }
+
   function toggleVoicePlus(enabled) {
     voicePlusEnabled = enabled;
     parsedEmotionChunks = null;
     document.getElementById('parseSection').style.display = enabled ? 'block' : 'none';
     document.getElementById('parseShortcut').style.display = enabled ? 'block' : 'none';
-    document.getElementById('emotionPreview').style.display = 'none';
-    document.getElementById('emotionPreview').innerHTML = '';
+    if (!enabled) clearParse();
   }
 
   async function parseEmotion() {
@@ -681,15 +714,30 @@ ${chunks[i].slice(0, 800)}`
   }
 
   function renderEmotionPreview(chunks) {
+    // Build annotated view in the Read tab (replaces textarea visually)
+    const textarea = document.getElementById('textInput');
+    const av = document.getElementById('annotatedView');
+    textarea.style.display = 'none';
+    av.style.display = 'block';
+    av.innerHTML = `<div class="annotated-view">${
+      chunks.map(c => `
+        <div class="annotated-chunk">
+          <div class="emotion-pill">✦ ${c.emotion.toUpperCase()}</div>
+          <div class="emotion-instr">${c.instruction}</div>
+          <div class="annotated-text">${c.text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
+        </div>`).join('')
+    }</div>
+    <button class="clear-parse" onclick="clearParse()">× Clear &amp; edit text</button>`;
+
+    // Also update Voice+ tab preview
     const preview = document.getElementById('emotionPreview');
     preview.style.display = 'block';
-    preview.innerHTML = chunks.map((c, i) => `
+    preview.innerHTML = chunks.map(c => `
       <div class="emotion-chunk">
         <div class="emotion-tag">${c.emotion.toUpperCase()}</div>
         <div class="emotion-instruction">✦ ${c.instruction}</div>
-        <div class="emotion-text">${c.text.slice(0, 200).replace(/</g,'&lt;')}</div>
-      </div>
-    `).join('');
+        <div class="emotion-text">${c.text.slice(0,200).replace(/</g,'&lt;')}</div>
+      </div>`).join('');
   }
 
   // ── Chunking ──────────────────────────────────────────
