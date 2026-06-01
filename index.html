@@ -25,19 +25,58 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { background: var(--bg); color: var(--text); font-family: 'Lora', Georgia, serif; min-height: 100vh; }
-  .app { max-width: 480px; margin: 0 auto; padding: 28px 20px 60px; }
+  .app { max-width: 480px; margin: 0 auto; padding: 0 0 60px; }
 
-  /* Masthead */
-  .masthead { text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .masthead { text-align: center; padding: 28px 20px 0; }
   .masthead h1 { font-size: 28px; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
-  .masthead p { font-size: 13px; color: var(--text-muted); font-family: 'DM Mono', monospace; margin-top: 6px; font-style: italic; }
+  .masthead p { font-size: 13px; color: var(--text-muted); font-family: 'DM Mono', monospace; margin-top: 4px; font-style: italic; }
 
-  /* Sections */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); margin: 20px 0 0; }
+  .tab { flex: 1; padding: 12px 4px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); cursor: pointer; text-align: center; border-bottom: 2px solid transparent; transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:active { opacity: 0.7; }
+
+  .panel { display: none; padding: 24px 20px; }
+  .panel.active { display: block; }
+
   .section { margin-bottom: 24px; }
   .section-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
   .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-  /* API Key */
+  /* URL fetch */
+  .url-row { display: flex; gap: 8px; }
+  .url-row input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; font-family: 'DM Mono', monospace; color: var(--text); outline: none; transition: border-color 0.2s; min-width: 0; }
+  .url-row input:focus { border-color: var(--accent-dim); }
+  .url-row input::placeholder { color: var(--text-muted); }
+  .btn-fetch { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-dim); cursor: pointer; white-space: nowrap; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+  .btn-fetch:active { border-color: var(--accent); color: var(--accent); }
+  .btn-fetch:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Textarea */
+  textarea { width: 100%; height: 180px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; font-size: 15px; line-height: 1.7; font-family: 'Lora', Georgia, serif; color: var(--text); resize: vertical; outline: none; transition: border-color 0.2s; }
+  textarea:focus { border-color: var(--accent-dim); }
+  textarea::placeholder { color: var(--text-muted); font-style: italic; }
+  .char-row { display: flex; justify-content: space-between; margin-top: 6px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
+
+  .styled-select { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 11px 36px 11px 14px; font-size: 14px; font-family: 'Lora', Georgia, serif; color: var(--text); outline: none; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a4845' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; cursor: pointer; transition: border-color 0.2s; }
+  .styled-select:focus { border-color: var(--accent-dim); }
+
+  .speed-container { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .speed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .speed-header span { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
+  .speed-value { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--accent); font-weight: 500; }
+  input[type=range] { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--surface2); border-radius: 2px; outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); box-shadow: 0 0 0 1px var(--accent-dim); }
+  input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); }
+  .speed-ticks { display: flex; justify-content: space-between; margin-top: 6px; }
+  .speed-tick { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text-muted); }
+
+  .model-row { display: flex; gap: 8px; }
+  .model-btn { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-dim); cursor: pointer; transition: all 0.15s; text-align: center; }
+  .model-btn.selected { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
+  .model-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+  .model-desc { color: var(--text-muted); font-size: 10px; }
+
   .key-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
   .key-row { display: flex; gap: 8px; }
   .key-row input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; font-size: 13px; font-family: 'DM Mono', monospace; color: var(--text); outline: none; transition: border-color 0.2s; }
@@ -49,99 +88,91 @@
   .key-hint a { color: var(--accent-dim); text-decoration: none; }
   .key-hint.saved { color: var(--success); }
 
-  /* Textarea */
-  textarea { width: 100%; height: 200px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; font-size: 15px; line-height: 1.7; font-family: 'Lora', Georgia, serif; color: var(--text); resize: vertical; outline: none; transition: border-color 0.2s; }
-  textarea:focus { border-color: var(--accent-dim); }
-  textarea::placeholder { color: var(--text-muted); font-style: italic; }
-  .char-row { display: flex; justify-content: space-between; margin-top: 6px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
-
-  /* Controls row - voice + speed */
-  .controls-row { display: flex; gap: 8px; align-items: center; }
-  .controls-row select { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; font-size: 14px; font-family: 'Lora', Georgia, serif; color: var(--text); outline: none; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a4845' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
-  .controls-row select:focus { border-color: var(--accent-dim); }
-
-  /* Speed buttons */
-  .speed-btns { display: flex; gap: 4px; }
-  .speed-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
-  .speed-btn.active { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
-  .speed-btn:active { opacity: 0.7; }
-
-  /* Model toggle */
-  .model-row { display: flex; gap: 8px; }
-  .model-btn { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-dim); cursor: pointer; transition: all 0.15s; text-align: center; }
-  .model-btn.selected { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
-  .model-label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 2px; }
-  .model-desc { color: var(--text-muted); font-size: 10px; }
-
-  /* Generate button */
-  .btn-generate { width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: var(--radius); font-size: 15px; font-family: 'Lora', Georgia, serif; font-weight: 500; color: var(--bg); cursor: pointer; letter-spacing: 0.05em; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; }
+  .btn-generate { width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: var(--radius); font-size: 15px; font-family: 'Lora', Georgia, serif; font-weight: 500; color: var(--bg); cursor: pointer; letter-spacing: 0.05em; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
   .btn-generate:active { background: var(--accent-dim); transform: scale(0.99); }
   .btn-generate:disabled { background: var(--text-muted); cursor: not-allowed; transform: none; }
 
-  /* Progress */
   .progress-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-top: 12px; display: none; }
   .progress-box.visible { display: block; }
   .progress-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
   .progress-bar-bg { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
   .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
 
-  /* Player */
+  .read-time { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent-dim); margin-top: 6px; }
+
   .player { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; display: none; margin-top: 16px; }
   .player.visible { display: block; }
-  .player-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent-dim); margin-bottom: 12px; }
+  .player-title { font-size: 13px; color: var(--text); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .player-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-dim); margin-bottom: 10px; }
   audio { width: 100%; border-radius: 6px; accent-color: var(--accent); }
+  .skip-row { display: flex; justify-content: center; gap: 16px; margin-top: 12px; }
+  .skip-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 20px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-dim); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+  .skip-btn:active { border-color: var(--accent); color: var(--accent); transform: scale(0.97); }
   .download-link { display: block; text-align: center; margin-top: 10px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); text-decoration: none; padding: 8px; border: 1px solid var(--border); border-radius: 6px; transition: all 0.15s; }
   .download-link:active { color: var(--accent); border-color: var(--accent); }
 
-  /* Error */
   .error-box { background: rgba(201,110,110,0.08); border: 1px solid rgba(201,110,110,0.3); border-radius: var(--radius); padding: 12px 14px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--danger); display: none; margin-bottom: 12px; line-height: 1.6; }
   .error-box.visible { display: block; }
 
-  /* Spinner */
+  /* History */
+  .history-empty { text-align: center; padding: 40px 20px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-muted); }
+  .history-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s; }
+  .history-item:active { border-color: var(--accent); }
+  .history-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+  .history-item-title { font-size: 14px; color: var(--text); line-height: 1.4; flex: 1; }
+  .history-item-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 0 0 0 8px; line-height: 1; flex-shrink: 0; }
+  .history-item-delete:active { color: var(--danger); }
+  .history-item-meta { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); display: flex; gap: 12px; }
+  .history-resume { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent-dim); margin-top: 6px; }
+
   .spinner { width: 18px; height: 18px; border: 2px solid rgba(15,14,12,0.3); border-top-color: var(--bg); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+  .spinner-sm { width: 13px; height: 13px; border: 2px solid var(--border); border-top-color: var(--text-dim); border-radius: 50%; animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* Footer */
   .footer-note { text-align: center; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); line-height: 1.8; }
   .footer-note a { color: var(--accent-dim); text-decoration: none; }
 </style>
 </head>
 <body>
 <div class="app">
+
   <div class="masthead">
     <h1>Reader</h1>
     <p>text → audio · openai tts</p>
   </div>
 
-  <!-- API Key -->
-  <div class="section">
-    <div class="section-label">API Key</div>
-    <div class="key-box">
-      <div class="key-row">
-        <input type="password" id="apiKeyInput" placeholder="sk-proj-..." />
-        <button class="btn-save" onclick="saveKey()">Save</button>
-      </div>
-      <div class="key-hint" id="keyHint">
-        Get a key at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>
-      </div>
-    </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('read')">Read</button>
+    <button class="tab" onclick="switchTab('history')">History</button>
+    <button class="tab" onclick="switchTab('settings')">Settings</button>
   </div>
 
-  <!-- Text -->
-  <div class="section">
-    <div class="section-label">Text</div>
-    <textarea id="textInput" placeholder="Paste your article or any text here…" oninput="updateCount()"></textarea>
-    <div class="char-row">
-      <span id="charCount">0 characters</span>
-      <span id="costEst">~$0.000</span>
-    </div>
-  </div>
+  <!-- READ PANEL -->
+  <div class="panel active" id="panel-read">
 
-  <!-- Voice + Speed -->
-  <div class="section">
-    <div class="section-label">Voice & Speed</div>
-    <div class="controls-row">
-      <select id="voiceSelect" onchange="selectedVoice = this.value">
+    <div class="section">
+      <div class="section-label">Fetch from URL</div>
+      <div class="url-row">
+        <input type="url" id="urlInput" placeholder="https://example.com/article" />
+        <button class="btn-fetch" id="fetchBtn" onclick="fetchUrl()">
+          <span id="fetchBtnContent">Fetch</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Text</div>
+      <textarea id="textInput" placeholder="Paste your article or any text here…" oninput="updateCount()"></textarea>
+      <div class="char-row">
+        <span id="charCount">0 characters</span>
+        <span id="costEst">~$0.000</span>
+      </div>
+      <div class="read-time" id="readTime"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Voice</div>
+      <select class="styled-select" id="voiceSelect" onchange="selectedVoice = this.value">
         <option value="alloy">Alloy — Neutral</option>
         <option value="nova">Nova — Warm Female</option>
         <option value="onyx">Onyx — Deep Male</option>
@@ -151,70 +182,137 @@
         <option value="coral">Coral — Friendly Female</option>
         <option value="sage">Sage — Calm Male</option>
       </select>
-      <div class="speed-btns">
-        <button class="speed-btn" onclick="setSpeed(0.9, this)">0.9×</button>
-        <button class="speed-btn active" onclick="setSpeed(1.0, this)">1×</button>
-        <button class="speed-btn" onclick="setSpeed(1.25, this)">1.25×</button>
-        <button class="speed-btn" onclick="setSpeed(1.5, this)">1.5×</button>
-        <button class="speed-btn" onclick="setSpeed(2.0, this)">2×</button>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Speed</div>
+      <div class="speed-container">
+        <div class="speed-header">
+          <span>Playback speed</span>
+          <span class="speed-value" id="speedDisplay">1.0×</span>
+        </div>
+        <input type="range" id="speedSlider" min="0.5" max="5.0" step="0.05" value="1.0" oninput="updateSpeed(this.value)">
+        <div class="speed-ticks">
+          <span class="speed-tick">0.5×</span>
+          <span class="speed-tick">1.0×</span>
+          <span class="speed-tick">2.0×</span>
+          <span class="speed-tick">3.5×</span>
+          <span class="speed-tick">5.0×</span>
+        </div>
       </div>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <button class="btn-generate" id="generateBtn" onclick="generateAudio()">
+      ▶ &nbsp;Generate Audio
+    </button>
+
+    <div class="progress-box" id="progressBox">
+      <div class="progress-label" id="progressLabel">Generating…</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+
+    <div class="player" id="playerBox">
+      <div class="player-title" id="playerTitle"></div>
+      <div class="player-label">Now playing</div>
+      <audio id="audioPlayer" controls></audio>
+      <div class="skip-row">
+        <button class="skip-btn" onclick="skipAudio(-15)">← 15s</button>
+        <button class="skip-btn" onclick="skipAudio(30)">30s →</button>
+      </div>
+      <a class="download-link" id="downloadLink" href="#" download="audio.mp3">↓ Save MP3</a>
+    </div>
+
+    <div class="footer-note">OpenAI TTS · pay-as-you-go · no monthly fee</div>
+  </div>
+
+  <!-- HISTORY PANEL -->
+  <div class="panel" id="panel-history">
+    <div id="historyList"></div>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div class="panel" id="panel-settings">
+
+    <div class="section">
+      <div class="section-label">API Key</div>
+      <div class="key-box">
+        <div class="key-row">
+          <input type="password" id="apiKeyInput" placeholder="sk-proj-..." />
+          <button class="btn-save" onclick="saveKey()">Save</button>
+        </div>
+        <div class="key-hint" id="keyHint">
+          Get a key at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Quality</div>
+      <div class="model-row">
+        <div class="model-btn selected" id="model-hd" onclick="selectModel(this, 'tts-1-hd')">
+          <span class="model-label">HD</span>
+          <span class="model-desc">Best quality · $0.030/1K chars</span>
+        </div>
+        <div class="model-btn" id="model-std" onclick="selectModel(this, 'tts-1')">
+          <span class="model-label">Standard</span>
+          <span class="model-desc">Fast · $0.015/1K chars</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Bookmarklet</div>
+      <div class="key-box">
+        <p style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);line-height:1.7;margin-bottom:12px;">
+          Tap <strong style="color:var(--text)">Send to Reader</strong> on any Royal Road chapter to send it straight to this app.
+        </p>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);word-break:break-all;line-height:1.5;user-select:all;" id="bookmarkletCode"></div>
+        <p style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);line-height:1.7;margin-top:12px;">
+          <strong style="color:var(--text-dim)">To install on iPhone:</strong><br>
+          1. Tap the code above to select it, then copy<br>
+          2. In Safari, bookmark any page<br>
+          3. Open Bookmarks → Edit that bookmark<br>
+          4. Replace the URL with the copied code<br>
+          5. Rename it "Send to Reader"<br>
+          6. On any Royal Road chapter, tap the bookmark
+        </p>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      API key stored only on this device.<br>
+      <a href="https://platform.openai.com/api-keys" target="_blank">Manage keys at platform.openai.com</a>
     </div>
   </div>
 
-  <!-- Quality -->
-  <div class="section">
-    <div class="section-label">Quality</div>
-    <div class="model-row">
-      <div class="model-btn selected" onclick="selectModel(this, 'tts-1-hd')">
-        <span class="model-label">HD</span>
-        <span class="model-desc">Best quality · $0.030/1K chars</span>
-      </div>
-      <div class="model-btn" onclick="selectModel(this, 'tts-1')">
-        <span class="model-label">Standard</span>
-        <span class="model-desc">Fast · $0.015/1K chars</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="error-box" id="errorBox"></div>
-
-  <button class="btn-generate" id="generateBtn" onclick="generateAudio()">
-    ▶ &nbsp;Generate Audio
-  </button>
-
-  <!-- Progress -->
-  <div class="progress-box" id="progressBox">
-    <div class="progress-label" id="progressLabel">Generating chunk 1…</div>
-    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
-  </div>
-
-  <!-- Player -->
-  <div class="player" id="playerBox">
-    <div class="player-label">Ready to play</div>
-    <audio id="audioPlayer" controls></audio>
-    <a class="download-link" id="downloadLink" href="#" download="audio.mp3">↓ Save MP3</a>
-  </div>
-
-  <div class="footer-note">
-    OpenAI TTS · pay-as-you-go · no monthly fee<br>
-    <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>
-  </div>
 </div>
-
 <script>
   let OPENAI_KEY = localStorage.getItem('openai_key') || '';
   let selectedVoice = 'alloy';
   let selectedModel = 'tts-1-hd';
   let playbackSpeed = 1.0;
   let currentAudioUrl = null;
+  let currentArticleId = null;
   const CHUNK_SIZE = 4000;
+  const MAX_HISTORY = 20;
 
-  // Restore saved key indicator
   if (OPENAI_KEY) {
     document.getElementById('keyHint').textContent = '✓ Key saved on this device';
     document.getElementById('keyHint').className = 'key-hint saved';
   }
 
+  // ── Tabs ──────────────────────────────────────────────
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+    if (tab === 'history') renderHistory();
+  }
+
+  // ── Settings ──────────────────────────────────────────
   function saveKey() {
     const val = document.getElementById('apiKeyInput').value.trim();
     if (!val) return;
@@ -232,31 +330,199 @@
     updateCount();
   }
 
-  function setSpeed(speed, el) {
-    playbackSpeed = speed;
-    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
+  // ── Speed ─────────────────────────────────────────────
+  function updateSpeed(val) {
+    playbackSpeed = parseFloat(val);
+    const display = playbackSpeed % 1 === 0 ? playbackSpeed.toFixed(1) : playbackSpeed.toFixed(2).replace(/0+$/, '');
+    document.getElementById('speedDisplay').textContent = display + '×';
     const audio = document.getElementById('audioPlayer');
-    if (audio) audio.playbackRate = speed;
+    if (audio) audio.playbackRate = playbackSpeed;
+    updateCount();
+  }
+
+  // ── Char count ────────────────────────────────────────
+  function skipAudio(seconds) {
+    const audio = document.getElementById('audioPlayer');
+    if (!audio) return;
+    audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + seconds));
   }
 
   function updateCount() {
-    const len = document.getElementById('textInput').value.length;
+    const text = document.getElementById('textInput').value;
+    const len = text.length;
     document.getElementById('charCount').textContent = len.toLocaleString() + ' characters';
     const rate = selectedModel === 'tts-1-hd' ? 0.030 : 0.015;
     document.getElementById('costEst').textContent = '~$' + (len / 1000 * rate).toFixed(3);
+    // Estimated read time: avg ~150 words/min at 1x, ~4 chars/word
+    const readTimeEl = document.getElementById('readTime');
+    if (len > 0) {
+      const words = text.trim().split(/\s+/).length;
+      const mins = words / 150 / playbackSpeed;
+      if (mins < 1) {
+        readTimeEl.textContent = '~' + Math.round(mins * 60) + 's at ' + (playbackSpeed % 1 === 0 ? playbackSpeed.toFixed(1) : playbackSpeed) + '×';
+      } else {
+        readTimeEl.textContent = '~' + (mins < 1.5 ? '1 min' : Math.round(mins) + ' min') + ' at ' + (playbackSpeed % 1 === 0 ? playbackSpeed.toFixed(1) : playbackSpeed) + '×';
+      }
+    } else {
+      readTimeEl.textContent = '';
+    }
   }
 
-  // Split text into chunks at sentence boundaries
+  // ── URL Fetch ─────────────────────────────────────────
+  async function fetchUrl() {
+    const url = document.getElementById('urlInput').value.trim();
+    if (!url) return;
+    const btn = document.getElementById('fetchBtn');
+    const content = document.getElementById('fetchBtnContent');
+    btn.disabled = true;
+    content.innerHTML = '<div class="spinner-sm"></div>';
+    try {
+      const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+      const res = await fetch(proxyUrl);
+      if (!res.ok) throw new Error('Failed to fetch page');
+      const data = await res.json();
+      const html = data.contents;
+      // Parse and extract readable text
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      // Remove scripts, styles, nav, footer, ads
+      ['script','style','nav','footer','header','aside','form','noscript','iframe'].forEach(tag => {
+        doc.querySelectorAll(tag).forEach(el => el.remove());
+      });
+      // Try to find main article content
+      const articleEl = doc.querySelector('article') || doc.querySelector('main') || doc.querySelector('[role="main"]') || doc.body;
+      let text = articleEl.innerText || articleEl.textContent || '';
+      // Clean up whitespace
+      text = text.replace(/\n{3,}/g, '\n\n').replace(/[ \t]+/g, ' ').trim();
+      if (text.length < 100) throw new Error('Could not extract article text from this page');
+      // Try to get title
+      const title = doc.querySelector('h1')?.textContent?.trim() || doc.title || url;
+      document.getElementById('textInput').value = text;
+      document.getElementById('urlInput').value = '';
+      // Store title for history
+      document.getElementById('textInput').dataset.title = title;
+      updateCount();
+    } catch (err) {
+      showError('Could not fetch URL: ' + err.message + '. Try pasting the text manually instead.');
+    } finally {
+      btn.disabled = false;
+      content.textContent = 'Fetch';
+    }
+  }
+
+  // ── History ───────────────────────────────────────────
+  function getHistory() {
+    try { return JSON.parse(localStorage.getItem('reader_history') || '[]'); } catch { return []; }
+  }
+
+  function saveHistory(history) {
+    localStorage.setItem('reader_history', JSON.stringify(history));
+  }
+
+  function addToHistory(id, title, textSnippet, audioUrl) {
+    const history = getHistory();
+    // Remove existing entry with same id
+    const filtered = history.filter(h => h.id !== id);
+    filtered.unshift({ id, title, snippet: textSnippet.slice(0, 120), date: Date.now(), position: 0 });
+    saveHistory(filtered.slice(0, MAX_HISTORY));
+  }
+
+  function savePosition(id, position) {
+    const history = getHistory();
+    const item = history.find(h => h.id === id);
+    if (item) { item.position = position; saveHistory(history); }
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    const history = getHistory();
+    if (history.length === 0) {
+      list.innerHTML = '<div class="history-empty">No history yet.<br>Generate audio to see it here.</div>';
+      return;
+    }
+    list.innerHTML = history.map(item => {
+      const date = new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const mins = item.position > 0 ? Math.floor(item.position / 60) + 'm ' + Math.floor(item.position % 60) + 's' : null;
+      return `
+        <div class="history-item" onclick="loadFromHistory('${item.id}')">
+          <div class="history-item-header">
+            <div class="history-item-title">${escHtml(item.title)}</div>
+            <button class="history-item-delete" onclick="deleteHistory(event, '${item.id}')">×</button>
+          </div>
+          <div class="history-item-meta">
+            <span>${date}</span>
+            <span>${item.snippet.length} chars</span>
+          </div>
+          ${mins ? `<div class="history-resume">Resume at ${mins}</div>` : ''}
+        </div>`;
+    }).join('');
+  }
+
+  function deleteHistory(e, id) {
+    e.stopPropagation();
+    const history = getHistory().filter(h => h.id !== id);
+    saveHistory(history);
+    // Also remove stored audio
+    localStorage.removeItem('reader_audio_' + id);
+    localStorage.removeItem('reader_text_' + id);
+    renderHistory();
+  }
+
+  function loadFromHistory(id) {
+    const history = getHistory();
+    const item = history.find(h => h.id === id);
+    if (!item) return;
+
+    // Try to restore stored audio blob
+    const storedAudio = localStorage.getItem('reader_audio_' + id);
+    const storedText = localStorage.getItem('reader_text_' + id);
+
+    switchTab('read');
+
+    if (storedText) {
+      document.getElementById('textInput').value = storedText;
+      document.getElementById('textInput').dataset.title = item.title;
+      updateCount();
+    }
+
+    if (storedAudio) {
+      // Restore from base64
+      try {
+        const binary = atob(storedAudio);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const blob = new Blob([bytes], { type: 'audio/mpeg' });
+        if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
+        currentAudioUrl = URL.createObjectURL(blob);
+        currentArticleId = id;
+
+        const audio = document.getElementById('audioPlayer');
+        audio.src = currentAudioUrl;
+        audio.playbackRate = playbackSpeed;
+        document.getElementById('playerTitle').textContent = item.title;
+        document.getElementById('downloadLink').href = currentAudioUrl;
+        document.getElementById('playerBox').className = 'player visible';
+
+        // Resume position
+        audio.addEventListener('loadedmetadata', () => {
+          if (item.position > 0) audio.currentTime = item.position;
+        }, { once: true });
+      } catch(e) {
+        // Audio restore failed, just show text
+      }
+    }
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Chunking ──────────────────────────────────────────
   function splitIntoChunks(text, maxLen) {
     const chunks = [];
     let remaining = text.trim();
     while (remaining.length > 0) {
-      if (remaining.length <= maxLen) {
-        chunks.push(remaining);
-        break;
-      }
-      // Find last sentence boundary before maxLen
+      if (remaining.length <= maxLen) { chunks.push(remaining); break; }
       let cutAt = maxLen;
       const sentenceEnd = remaining.lastIndexOf('. ', maxLen);
       const newline = remaining.lastIndexOf('\n', maxLen);
@@ -271,16 +537,8 @@
   async function fetchChunk(text) {
     const response = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + OPENAI_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: selectedModel,
-        input: text,
-        voice: selectedVoice,
-        response_format: 'mp3'
-      })
+      headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: selectedModel, input: text, voice: selectedVoice, response_format: 'mp3' })
     });
     if (!response.ok) {
       let msg = 'API error ' + response.status;
@@ -290,8 +548,10 @@
     return await response.arrayBuffer();
   }
 
+  // ── Generate ──────────────────────────────────────────
   async function generateAudio() {
     const text = document.getElementById('textInput').value.trim();
+    const title = document.getElementById('textInput').dataset.title || text.slice(0, 60) + (text.length > 60 ? '…' : '');
     const btn = document.getElementById('generateBtn');
     const errorBox = document.getElementById('errorBox');
     const playerBox = document.getElementById('playerBox');
@@ -301,48 +561,61 @@
     playerBox.className = 'player';
     progressBox.className = 'progress-box';
 
-    if (!OPENAI_KEY) { showError('Please enter and save your OpenAI API key first.'); return; }
+    if (!OPENAI_KEY) { showError('No API key — go to Settings and add your OpenAI key.'); return; }
     if (!text) { showError('Please paste some text first.'); return; }
 
     const chunks = splitIntoChunks(text, CHUNK_SIZE);
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div> Generating…';
-
-    if (chunks.length > 1) {
-      progressBox.className = 'progress-box visible';
-    }
+    if (chunks.length > 1) progressBox.className = 'progress-box visible';
 
     try {
       const buffers = [];
       for (let i = 0; i < chunks.length; i++) {
         document.getElementById('progressLabel').textContent =
-          chunks.length > 1 ? `Generating part ${i + 1} of ${chunks.length}…` : 'Generating audio…';
+          chunks.length > 1 ? `Generating part ${i+1} of ${chunks.length}…` : 'Generating audio…';
         document.getElementById('progressFill').style.width = (i / chunks.length * 100) + '%';
-        const buf = await fetchChunk(chunks[i]);
-        buffers.push(buf);
+        buffers.push(await fetchChunk(chunks[i]));
       }
       document.getElementById('progressFill').style.width = '100%';
 
-      // Concatenate all buffers
-      const totalLen = buffers.reduce((sum, b) => sum + b.byteLength, 0);
+      const totalLen = buffers.reduce((s, b) => s + b.byteLength, 0);
       const combined = new Uint8Array(totalLen);
       let offset = 0;
-      for (const buf of buffers) {
-        combined.set(new Uint8Array(buf), offset);
-        offset += buf.byteLength;
-      }
+      for (const buf of buffers) { combined.set(new Uint8Array(buf), offset); offset += buf.byteLength; }
 
       if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
       const blob = new Blob([combined], { type: 'audio/mpeg' });
       currentAudioUrl = URL.createObjectURL(blob);
 
+      // Save to history
+      const id = 'art_' + Date.now();
+      currentArticleId = id;
+      addToHistory(id, title, text);
+      localStorage.setItem('reader_text_' + id, text);
+
+      // Try to save audio as base64 (skip if too large ~5MB limit)
+      if (totalLen < 4 * 1024 * 1024) {
+        try {
+          let binary = '';
+          combined.forEach(b => binary += String.fromCharCode(b));
+          localStorage.setItem('reader_audio_' + id, btoa(binary));
+        } catch(e) { /* storage full, skip */ }
+      }
+
       const audio = document.getElementById('audioPlayer');
       audio.src = currentAudioUrl;
       audio.playbackRate = playbackSpeed;
+      document.getElementById('playerTitle').textContent = title;
       document.getElementById('downloadLink').href = currentAudioUrl;
       playerBox.className = 'player visible';
       progressBox.className = 'progress-box';
       audio.play();
+
+      // Track position for resume
+      audio.ontimeupdate = () => {
+        if (currentArticleId) savePosition(currentArticleId, Math.floor(audio.currentTime));
+      };
 
     } catch (err) {
       showError(err.message);
@@ -358,6 +631,35 @@
     box.textContent = msg;
     box.className = 'error-box visible';
   }
+
+  // ── Bookmarklet ───────────────────────────────────────
+  const APP_URL = 'https://dallasarmieri.github.io/reader';
+
+  const bookmarkletFn = `(function(){
+    var el=document.querySelector('.chapter-inner.chapter-content')||document.querySelector('article')||document.querySelector('main')||document.body;
+    var title=document.querySelector('h1')?document.querySelector('h1').innerText.trim():document.title;
+    var text=el.innerText.replace(/\\n{3,}/g,'\\n\\n').trim();
+    if(text.length<50){alert('Could not find chapter text.');return;}
+    var url='${APP_URL}?title='+encodeURIComponent(title.slice(0,120))+'&text='+encodeURIComponent(text.slice(0,50000));
+    window.location.href=url;
+  })();`;
+
+  const bookmarklet = 'javascript:' + bookmarkletFn.replace(/\s+/g,' ');
+  document.getElementById('bookmarkletCode').textContent = bookmarklet;
+
+  // ── Handle incoming text from bookmarklet ─────────────
+  (function() {
+    const params = new URLSearchParams(window.location.search);
+    const text = params.get('text');
+    const title = params.get('title');
+    if (text) {
+      document.getElementById('textInput').value = decodeURIComponent(text);
+      if (title) document.getElementById('textInput').dataset.title = decodeURIComponent(title);
+      updateCount();
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  })();
 </script>
 </body>
 </html>
