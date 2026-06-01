@@ -309,8 +309,10 @@
     <div class="section" id="parseSection" style="display:none;">
       <div class="section-label">Granularity</div>
       <select class="styled-select" id="parseGranularity" onchange="parsedEmotionChunks = null; clearParse(); updateGranularityHint();">
-        <option value="paragraph">Paragraph — balanced, recommended</option>
-        <option value="sentence">Sentence — maximum expression, more API calls</option>
+        <option value="line">Line — most expressive, one call per line</option>
+        <option value="beat">Scene Beat — 2-3 lines grouped</option>
+        <option value="block">Paragraph Block — 4-6 lines grouped</option>
+        <option value="chunk">Chapter Chunk — fastest, ~4000 chars</option>
       </select>
       <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:8px;line-height:1.7;" id="granularityHint">
         Each paragraph gets its own emotion analysis and TTS call. Good balance of expressiveness and speed.
@@ -653,13 +655,9 @@
     document.getElementById('emotionPreview').innerHTML = '';
   }
 
-  function updateGranularityHint() {
-    const mode = getGranularity();
-    const hint = document.getElementById('granularityHint');
-    if (!hint) return;
-    hint.textContent = mode === 'sentence'
-      ? 'Each sentence pair gets its own emotion analysis and TTS call. Most expressive but slowest to generate.'
-      : 'Each paragraph gets its own emotion analysis and TTS call. Good balance of expressiveness and speed.';
+  function getGranularity() {
+    const el = document.getElementById('parseGranularity');
+    return el ? el.value : 'line';
   }
 
   function toggleVoicePlus(enabled) {
@@ -670,25 +668,47 @@
     if (!enabled) clearParse();
   }
 
-  function getGranularity() {
-    const el = document.getElementById('parseGranularity');
-    return el ? el.value : 'paragraph';
+  function updateGranularityHint() {
+    const hints = {
+      line:  'Each line gets its own emotion + TTS call. Most expressive, slowest to generate. Best for action and dialogue-heavy scenes.',
+      beat:  'Groups 2-3 lines per call. Good balance for most fiction chapters.',
+      block: 'Groups 4-6 lines per call. Faster generation, coarser emotion shifts.',
+      chunk: 'Splits every ~4000 characters. Fastest, least expressive — same as non-Voice+ mode.'
+    };
+    const hint = document.getElementById('granularityHint');
+    if (hint) hint.textContent = hints[getGranularity()] || '';
   }
 
   function splitByGranularity(text, mode) {
-    if (mode === 'sentence') {
-      // Split on sentence-ending punctuation followed by space/newline
-      const sentences = text.match(/[^.!?]+[.!?]+[\s]*/g) || [text];
-      // Group into pairs to avoid too many tiny calls
-      const groups = [];
-      for (let i = 0; i < sentences.length; i += 2) {
-        groups.push((sentences[i] + (sentences[i+1] || '')).trim());
-      }
-      return groups.filter(g => g.length > 10);
-    } else {
-      // Paragraph mode — split on double newlines or single newlines
-      return text.split(/\n\n+|\n/).map(p => p.trim()).filter(p => p.length > 30);
+    // Split into individual non-empty lines first
+    const lines = text.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
+
+    if (mode === 'chunk') {
+      // Original chunk behavior
+      return splitIntoChunks(text, CHUNK_SIZE).map(t => ({ text: t }));
     }
+
+    // Merge very short lines (< 60 chars) with the next line to avoid tiny segments
+    const merged = [];
+    let buffer = '';
+    for (const line of lines) {
+      if (buffer && buffer.length < 60) {
+        buffer += ' ' + line;
+      } else {
+        if (buffer) merged.push(buffer);
+        buffer = line;
+      }
+    }
+    if (buffer) merged.push(buffer);
+
+    // Now group based on mode
+    const groupSize = mode === 'line' ? 1 : mode === 'beat' ? 3 : 5;
+    const groups = [];
+    for (let i = 0; i < merged.length; i += groupSize) {
+      const group = merged.slice(i, i + groupSize).join('\n');
+      if (group.trim().length > 0) groups.push(group);
+    }
+    return groups;
   }
 
   async function parseEmotion() {
@@ -702,7 +722,9 @@
     parsedEmotionChunks = null;
 
     const mode = getGranularity();
-    const segments = splitByGranularity(text, mode);
+    const rawSegments = splitByGranularity(text, mode);
+    // Normalise to plain strings
+    const segments = rawSegments.map(s => typeof s === 'string' ? s : s.text);
 
     try {
       const results = [];
