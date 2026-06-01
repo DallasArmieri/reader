@@ -640,8 +640,8 @@
     var title=document.querySelector('h1')?document.querySelector('h1').innerText.trim():document.title;
     var text=el.innerText.replace(/\\n{3,}/g,'\\n\\n').trim();
     if(text.length<50){alert('Could not find chapter text.');return;}
-    try{localStorage.setItem('reader_incoming_text',text);localStorage.setItem('reader_incoming_title',title);}catch(e){alert('Storage error: '+e.message);return;}
-    window.location.href='${APP_URL}?incoming=1';
+    var payload=JSON.stringify({title:title.slice(0,200),text:text});
+    window.location.href='${APP_URL}#incoming='+encodeURIComponent(payload);
   })();`;
 
   const bookmarklet = 'javascript:' + bookmarkletFn.replace(/\s+/g,' ');
@@ -649,17 +649,16 @@
 
   // ── Handle incoming text from bookmarklet ─────────────
   (function() {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('incoming') === '1') {
-      const text = localStorage.getItem('reader_incoming_text');
-      const title = localStorage.getItem('reader_incoming_title');
-      if (text) {
-        document.getElementById('textInput').value = text;
-        if (title) document.getElementById('textInput').dataset.title = title;
-        updateCount();
-        localStorage.removeItem('reader_incoming_text');
-        localStorage.removeItem('reader_incoming_title');
-      }
+    const hash = window.location.hash;
+    if (hash.startsWith('#incoming=')) {
+      try {
+        const payload = JSON.parse(decodeURIComponent(hash.slice('#incoming='.length)));
+        if (payload.text) {
+          document.getElementById('textInput').value = payload.text;
+          if (payload.title) document.getElementById('textInput').dataset.title = payload.title;
+          updateCount();
+        }
+      } catch(e) {}
       window.history.replaceState({}, '', window.location.pathname);
     }
   })();
