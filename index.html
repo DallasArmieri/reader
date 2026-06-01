@@ -203,9 +203,12 @@
 
     <div class="section">
       <div class="section-label">Text</div>
-      <div id="parseShortcut" style="display:none;margin-bottom:8px;">
+      <div id="parseShortcut" style="display:none;margin-bottom:8px;gap:8px;flex-wrap:wrap;">
         <button class="btn-parse-inline" onclick="parseEmotion()" id="parseShortcutBtn">
           <span id="parseShortcutContent">✦ Parse Emotion</span>
+        </button>
+        <button class="btn-parse-inline" onclick="parseVoice()" id="parseVoiceBtn" style="display:none;border-color:rgba(110,155,201,0.4);color:#6e9bc9;">
+          <span id="parseVoiceBtnContent">◆ Parse Voice</span>
         </button>
       </div>
       <textarea id="textInput" placeholder="Paste your article or any text here…" oninput="onTextInput()"></textarea>
@@ -737,7 +740,7 @@
     parsedEmotionChunks = null;
     speakerMap = {};
     document.getElementById('parseSection').style.display = enabled ? 'block' : 'none';
-    document.getElementById('parseShortcut').style.display = enabled ? 'block' : 'none';
+    document.getElementById('parseShortcut').style.display = enabled ? 'flex' : 'none';
     if (!enabled) clearParse();
   }
 
@@ -767,6 +770,7 @@
       speakerMap = {};
       clearParse();
     }
+    updateParseVoiceBtnVisibility();
   }
 
   function setVoiceMode(mode) {
@@ -778,6 +782,14 @@
     parsedEmotionChunks = null;
     speakerMap = {};
     clearParse();
+    updateParseVoiceBtnVisibility();
+  }
+
+  function updateParseVoiceBtnVisibility() {
+    const multiOn = document.getElementById('multiVoiceToggle')?.checked;
+    const show = multiOn && voiceMode === 'voice';
+    const btn = document.getElementById('parseVoiceBtn');
+    if (btn) btn.style.display = show ? 'inline-flex' : 'none';
   }
 
   function updateGranularityHint() {
@@ -826,6 +838,32 @@
   function isDialogue(text) {
     const quoteContent = (text.match(/["""][^"""]+["""]/g) || []).join('');
     return quoteContent.length > text.length * 0.4;
+  }
+
+  async function parseVoice() {
+    const text = document.getElementById('textInput').value.trim();
+    if (!text) { alert('Paste some text on the Read tab first.'); return; }
+    if (!OPENAI_KEY) { alert('No API key — add it in Settings.'); return; }
+
+    const btn = document.getElementById('parseVoiceBtn');
+    const content = document.getElementById('parseVoiceBtnContent');
+    btn.disabled = true;
+    content.innerHTML = '<div class="spinner-sm"></div> Detecting…';
+    speakerMap = {};
+
+    try {
+      const speakers = await detectSpeakers(text);
+      const autoMap = autoAssignVoices(speakers);
+      speakerMap = { ...autoMap };
+      renderSpeakerTable(speakers, speakerMap);
+      // Switch to Voice+ tab to show the table
+      switchTab('voiceplus');
+    } catch(err) {
+      alert('Voice parse failed: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      content.textContent = '◆ Parse Voice';
+    }
   }
 
   async function detectSpeakers(fullText) {
