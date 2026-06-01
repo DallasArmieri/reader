@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Reader">
 <title>Reader</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -22,13 +25,19 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   body { background: var(--bg); color: var(--text); font-family: 'Lora', Georgia, serif; min-height: 100vh; }
-  .app { max-width: 480px; margin: 0 auto; padding: 28px 20px 40px; }
+  .app { max-width: 480px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  /* Masthead */
   .masthead { text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
   .masthead h1 { font-size: 28px; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
   .masthead p { font-size: 13px; color: var(--text-muted); font-family: 'DM Mono', monospace; margin-top: 6px; font-style: italic; }
+
+  /* Sections */
   .section { margin-bottom: 24px; }
   .section-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
   .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* API Key */
   .key-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
   .key-row { display: flex; gap: 8px; }
   .key-row input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; font-size: 13px; font-family: 'DM Mono', monospace; color: var(--text); outline: none; transition: border-color 0.2s; }
@@ -39,34 +48,60 @@
   .key-hint { font-size: 11px; font-family: 'DM Mono', monospace; margin-top: 8px; color: var(--text-muted); }
   .key-hint a { color: var(--accent-dim); text-decoration: none; }
   .key-hint.saved { color: var(--success); }
-   width: 100%; height: 200px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; font-size: 15px; line-height: 1.7; font-family: 'Lora', Georgia, serif; color: var(--text); resize: vertical; outline: none; transition: border-color 0.2s; }
+
+  /* Textarea */
+  textarea { width: 100%; height: 200px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; font-size: 15px; line-height: 1.7; font-family: 'Lora', Georgia, serif; color: var(--text); resize: vertical; outline: none; transition: border-color 0.2s; }
   textarea:focus { border-color: var(--accent-dim); }
   textarea::placeholder { color: var(--text-muted); font-style: italic; }
   .char-row { display: flex; justify-content: space-between; margin-top: 6px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
-  .voice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .voice-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; transition: all 0.15s; text-align: left; }
-  .voice-card:active, .voice-card.selected { border-color: var(--accent); background: var(--surface2); }
-  .voice-card.selected .voice-name { color: var(--accent); }
-  .voice-name { font-size: 14px; font-weight: 500; display: block; margin-bottom: 2px; }
-  .voice-desc { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); }
+
+  /* Controls row - voice + speed */
+  .controls-row { display: flex; gap: 8px; align-items: center; }
+  .controls-row select { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; font-size: 14px; font-family: 'Lora', Georgia, serif; color: var(--text); outline: none; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a4845' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; cursor: pointer; }
+  .controls-row select:focus { border-color: var(--accent-dim); }
+
+  /* Speed buttons */
+  .speed-btns { display: flex; gap: 4px; }
+  .speed-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .speed-btn.active { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
+  .speed-btn:active { opacity: 0.7; }
+
+  /* Model toggle */
   .model-row { display: flex; gap: 8px; }
   .model-btn { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-dim); cursor: pointer; transition: all 0.15s; text-align: center; }
   .model-btn.selected { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
   .model-label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 2px; }
   .model-desc { color: var(--text-muted); font-size: 10px; }
+
+  /* Generate button */
   .btn-generate { width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: var(--radius); font-size: 15px; font-family: 'Lora', Georgia, serif; font-weight: 500; color: var(--bg); cursor: pointer; letter-spacing: 0.05em; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; }
   .btn-generate:active { background: var(--accent-dim); transform: scale(0.99); }
   .btn-generate:disabled { background: var(--text-muted); cursor: not-allowed; transform: none; }
+
+  /* Progress */
+  .progress-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-top: 12px; display: none; }
+  .progress-box.visible { display: block; }
+  .progress-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
+  .progress-bar-bg { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+
+  /* Player */
   .player { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; display: none; margin-top: 16px; }
   .player.visible { display: block; }
   .player-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent-dim); margin-bottom: 12px; }
   audio { width: 100%; border-radius: 6px; accent-color: var(--accent); }
   .download-link { display: block; text-align: center; margin-top: 10px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); text-decoration: none; padding: 8px; border: 1px solid var(--border); border-radius: 6px; transition: all 0.15s; }
   .download-link:active { color: var(--accent); border-color: var(--accent); }
+
+  /* Error */
   .error-box { background: rgba(201,110,110,0.08); border: 1px solid rgba(201,110,110,0.3); border-radius: var(--radius); padding: 12px 14px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--danger); display: none; margin-bottom: 12px; line-height: 1.6; }
   .error-box.visible { display: block; }
+
+  /* Spinner */
   .spinner { width: 18px; height: 18px; border: 2px solid rgba(15,14,12,0.3); border-top-color: var(--bg); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Footer */
   .footer-note { text-align: center; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); line-height: 1.8; }
   .footer-note a { color: var(--accent-dim); text-decoration: none; }
 </style>
@@ -78,7 +113,8 @@
     <p>text → audio · openai tts</p>
   </div>
 
-  <div class="section" id="keySection">
+  <!-- API Key -->
+  <div class="section">
     <div class="section-label">API Key</div>
     <div class="key-box">
       <div class="key-row">
@@ -91,6 +127,7 @@
     </div>
   </div>
 
+  <!-- Text -->
   <div class="section">
     <div class="section-label">Text</div>
     <textarea id="textInput" placeholder="Paste your article or any text here…" oninput="updateCount()"></textarea>
@@ -100,36 +137,31 @@
     </div>
   </div>
 
+  <!-- Voice + Speed -->
   <div class="section">
-    <div class="section-label">Voice</div>
-    <div class="voice-grid">
-      <div class="voice-card selected" onclick="selectVoice(this, 'alloy')">
-        <span class="voice-name">Alloy</span>
-        <span class="voice-desc">Neutral · Balanced</span>
-      </div>
-      <div class="voice-card" onclick="selectVoice(this, 'nova')">
-        <span class="voice-name">Nova</span>
-        <span class="voice-desc">Warm · Female</span>
-      </div>
-      <div class="voice-card" onclick="selectVoice(this, 'onyx')">
-        <span class="voice-name">Onyx</span>
-        <span class="voice-desc">Deep · Male</span>
-      </div>
-      <div class="voice-card" onclick="selectVoice(this, 'shimmer')">
-        <span class="voice-name">Shimmer</span>
-        <span class="voice-desc">Clear · Female</span>
-      </div>
-      <div class="voice-card" onclick="selectVoice(this, 'echo')">
-        <span class="voice-name">Echo</span>
-        <span class="voice-desc">Crisp · Male</span>
-      </div>
-      <div class="voice-card" onclick="selectVoice(this, 'fable')">
-        <span class="voice-name">Fable</span>
-        <span class="voice-desc">Expressive · Male</span>
+    <div class="section-label">Voice & Speed</div>
+    <div class="controls-row">
+      <select id="voiceSelect" onchange="selectedVoice = this.value">
+        <option value="alloy">Alloy — Neutral</option>
+        <option value="nova">Nova — Warm Female</option>
+        <option value="onyx">Onyx — Deep Male</option>
+        <option value="shimmer">Shimmer — Clear Female</option>
+        <option value="echo">Echo — Crisp Male</option>
+        <option value="fable">Fable — Expressive Male</option>
+        <option value="coral">Coral — Friendly Female</option>
+        <option value="sage">Sage — Calm Male</option>
+      </select>
+      <div class="speed-btns">
+        <button class="speed-btn" onclick="setSpeed(0.9, this)">0.9×</button>
+        <button class="speed-btn active" onclick="setSpeed(1.0, this)">1×</button>
+        <button class="speed-btn" onclick="setSpeed(1.25, this)">1.25×</button>
+        <button class="speed-btn" onclick="setSpeed(1.5, this)">1.5×</button>
+        <button class="speed-btn" onclick="setSpeed(2.0, this)">2×</button>
       </div>
     </div>
   </div>
 
+  <!-- Quality -->
   <div class="section">
     <div class="section-label">Quality</div>
     <div class="model-row">
@@ -150,6 +182,13 @@
     ▶ &nbsp;Generate Audio
   </button>
 
+  <!-- Progress -->
+  <div class="progress-box" id="progressBox">
+    <div class="progress-label" id="progressLabel">Generating chunk 1…</div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+
+  <!-- Player -->
   <div class="player" id="playerBox">
     <div class="player-label">Ready to play</div>
     <audio id="audioPlayer" controls></audio>
@@ -158,7 +197,7 @@
 
   <div class="footer-note">
     OpenAI TTS · pay-as-you-go · no monthly fee<br>
-    Get an API key at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>
+    <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a>
   </div>
 </div>
 
@@ -166,8 +205,11 @@
   let OPENAI_KEY = localStorage.getItem('openai_key') || '';
   let selectedVoice = 'alloy';
   let selectedModel = 'tts-1-hd';
+  let playbackSpeed = 1.0;
   let currentAudioUrl = null;
+  const CHUNK_SIZE = 4000;
 
+  // Restore saved key indicator
   if (OPENAI_KEY) {
     document.getElementById('keyHint').textContent = '✓ Key saved on this device';
     document.getElementById('keyHint').className = 'key-hint saved';
@@ -183,17 +225,19 @@
     document.getElementById('keyHint').className = 'key-hint saved';
   }
 
-  function selectVoice(el, voice) {
-    document.querySelectorAll('.voice-card').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    selectedVoice = voice;
-  }
-
   function selectModel(el, model) {
     document.querySelectorAll('.model-btn').forEach(c => c.classList.remove('selected'));
     el.classList.add('selected');
     selectedModel = model;
     updateCount();
+  }
+
+  function setSpeed(speed, el) {
+    playbackSpeed = speed;
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    const audio = document.getElementById('audioPlayer');
+    if (audio) audio.playbackRate = speed;
   }
 
   function updateCount() {
@@ -203,53 +247,106 @@
     document.getElementById('costEst').textContent = '~$' + (len / 1000 * rate).toFixed(3);
   }
 
+  // Split text into chunks at sentence boundaries
+  function splitIntoChunks(text, maxLen) {
+    const chunks = [];
+    let remaining = text.trim();
+    while (remaining.length > 0) {
+      if (remaining.length <= maxLen) {
+        chunks.push(remaining);
+        break;
+      }
+      // Find last sentence boundary before maxLen
+      let cutAt = maxLen;
+      const sentenceEnd = remaining.lastIndexOf('. ', maxLen);
+      const newline = remaining.lastIndexOf('\n', maxLen);
+      const best = Math.max(sentenceEnd, newline);
+      if (best > maxLen * 0.5) cutAt = best + 1;
+      chunks.push(remaining.slice(0, cutAt).trim());
+      remaining = remaining.slice(cutAt).trim();
+    }
+    return chunks;
+  }
+
+  async function fetchChunk(text) {
+    const response = await fetch('https://api.openai.com/v1/audio/speech', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + OPENAI_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: selectedModel,
+        input: text,
+        voice: selectedVoice,
+        response_format: 'mp3'
+      })
+    });
+    if (!response.ok) {
+      let msg = 'API error ' + response.status;
+      try { const e = await response.json(); msg = e.error?.message || msg; } catch {}
+      throw new Error(msg);
+    }
+    return await response.arrayBuffer();
+  }
+
   async function generateAudio() {
     const text = document.getElementById('textInput').value.trim();
     const btn = document.getElementById('generateBtn');
     const errorBox = document.getElementById('errorBox');
     const playerBox = document.getElementById('playerBox');
+    const progressBox = document.getElementById('progressBox');
 
     errorBox.className = 'error-box';
-    errorBox.textContent = '';
+    playerBox.className = 'player';
+    progressBox.className = 'progress-box';
 
+    if (!OPENAI_KEY) { showError('Please enter and save your OpenAI API key first.'); return; }
     if (!text) { showError('Please paste some text first.'); return; }
 
+    const chunks = splitIntoChunks(text, CHUNK_SIZE);
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div> Generating…';
 
-    try {
-      const response = await fetch('https://api.openai.com/v1/audio/speech', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + OPENAI_KEY,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: selectedModel,
-          input: text,
-          voice: selectedVoice,
-          response_format: 'mp3'
-        })
-      });
+    if (chunks.length > 1) {
+      progressBox.className = 'progress-box visible';
+    }
 
-      if (!response.ok) {
-        let msg = 'API error ' + response.status;
-        try { const e = await response.json(); msg = e.error?.message || msg; } catch {}
-        throw new Error(msg);
+    try {
+      const buffers = [];
+      for (let i = 0; i < chunks.length; i++) {
+        document.getElementById('progressLabel').textContent =
+          chunks.length > 1 ? `Generating part ${i + 1} of ${chunks.length}…` : 'Generating audio…';
+        document.getElementById('progressFill').style.width = (i / chunks.length * 100) + '%';
+        const buf = await fetchChunk(chunks[i]);
+        buffers.push(buf);
+      }
+      document.getElementById('progressFill').style.width = '100%';
+
+      // Concatenate all buffers
+      const totalLen = buffers.reduce((sum, b) => sum + b.byteLength, 0);
+      const combined = new Uint8Array(totalLen);
+      let offset = 0;
+      for (const buf of buffers) {
+        combined.set(new Uint8Array(buf), offset);
+        offset += buf.byteLength;
       }
 
-      const blob = await response.blob();
       if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
+      const blob = new Blob([combined], { type: 'audio/mpeg' });
       currentAudioUrl = URL.createObjectURL(blob);
 
       const audio = document.getElementById('audioPlayer');
       audio.src = currentAudioUrl;
+      audio.playbackRate = playbackSpeed;
       document.getElementById('downloadLink').href = currentAudioUrl;
       playerBox.className = 'player visible';
+      progressBox.className = 'progress-box';
       audio.play();
 
     } catch (err) {
       showError(err.message);
+      progressBox.className = 'progress-box';
     } finally {
       btn.disabled = false;
       btn.innerHTML = '▶ &nbsp;Generate Audio';
