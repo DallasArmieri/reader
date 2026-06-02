@@ -850,8 +850,15 @@
   }
 
   function isDialogue(text) {
-    const quoteContent = (text.match(/["""][^"""]+["""]/g) || []).join('');
-    return quoteContent.length > text.length * 0.4;
+    const t = text.trim();
+    // Line starts with a quote mark
+    if (/^["""'']/.test(t)) return true;
+    // Line contains a quote mark at all
+    if (/["""'']/.test(t)) {
+      const quoteContent = (t.match(/["""''][^"""'']+["""'']/g) || []).join('');
+      return quoteContent.length > t.length * 0.25;
+    }
+    return false;
   }
 
   async function parseVoice() {
@@ -1190,11 +1197,10 @@ Text: ${segments[i].slice(0, 600)}`
 
   async function fetchChunk(text, voiceInstruction, voiceOverride) {
     const apiSpeed = Math.min(4.0, Math.max(0.25, playbackSpeed));
-    const multiVoiceOn = document.getElementById('multiVoiceToggle')?.checked;
     const body = {
       model: voicePlusEnabled ? 'gpt-4o-mini-tts' : selectedModel,
       input: text,
-      voice: (multiVoiceOn && voiceOverride) ? voiceOverride : selectedVoice,
+      voice: voiceOverride || selectedVoice,
       response_format: 'mp3',
       speed: apiSpeed
     };
