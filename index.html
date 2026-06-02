@@ -362,7 +362,7 @@
           </div>
 
           <!-- Narrator mode selectors -->
-          <div id="narratorModeUI">
+          <div id="narratorModeUI" style="display:block;">
             <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:6px;letter-spacing:0.1em;text-transform:uppercase;">Narrator voice</div>
             <select class="styled-select" id="narratorVoice" style="margin-bottom:12px;">
               <option value="onyx">Onyx — Deep Male</option>
@@ -727,11 +727,11 @@
   function clearParse() {
     parsedEmotionChunks = null;
     const av = document.getElementById('annotatedView');
-    av.style.display = 'none';
-    av.innerHTML = '';
-    document.getElementById('textInput').style.display = '';
-    document.getElementById('emotionPreview').style.display = 'none';
-    document.getElementById('emotionPreview').innerHTML = '';
+    if (av) { av.style.display = 'none'; av.innerHTML = ''; }
+    const ti = document.getElementById('textInput');
+    if (ti) ti.style.display = '';
+    const ep = document.getElementById('emotionPreview');
+    if (ep) { ep.style.display = 'none'; ep.innerHTML = ''; }
   }
 
   function getGranularity() {
@@ -769,7 +769,11 @@
 
   function toggleMultiVoiceSection(enabled) {
     document.getElementById('multiVoiceContent').style.display = enabled ? 'block' : 'none';
-    if (!enabled) {
+    if (enabled) {
+      // Ensure correct initial state
+      document.getElementById('narratorModeUI').style.display = voiceMode === 'narrator' ? 'block' : 'none';
+      document.getElementById('voiceModeUI').style.display = voiceMode === 'voice' ? 'block' : 'none';
+    } else {
       parsedEmotionChunks = null;
       speakerMap = {};
       clearParse();
@@ -1228,24 +1232,23 @@ Text: ${segments[i].slice(0, 600)}`
 
     const multiVoiceOn = document.getElementById('multiVoiceToggle')?.checked;
 
-    // Build chunks — use parsedEmotionChunks if available, otherwise split and apply voice if multi-voice is on
+    // Build chunks
     let chunks;
     if (parsedEmotionChunks) {
       chunks = parsedEmotionChunks;
+    } else if (multiVoiceOn && voiceMode === 'narrator') {
+      // Split by line for accurate dialogue detection
+      const narratorVoice = document.getElementById('narratorVoice')?.value || selectedVoice;
+      const dialogueVoice = document.getElementById('dialogueVoice')?.value || selectedVoice;
+      const lines = text.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
+      chunks = lines.map(line => ({
+        text: line,
+        instruction: null,
+        voice: isDialogue(line) ? dialogueVoice : narratorVoice
+      }));
     } else {
       const rawChunks = splitIntoChunks(text, CHUNK_SIZE);
-      chunks = rawChunks.map(t => {
-        let voice = selectedVoice;
-        if (multiVoiceOn) {
-          if (voiceMode === 'narrator') {
-            const narratorVoice = document.getElementById('narratorVoice')?.value || selectedVoice;
-            const dialogueVoice = document.getElementById('dialogueVoice')?.value || selectedVoice;
-            voice = isDialogue(t) ? dialogueVoice : narratorVoice;
-          }
-          // voice mode without parse falls back to selectedVoice since no speaker map
-        }
-        return { text: t, instruction: null, voice };
-      });
+      chunks = rawChunks.map(t => ({ text: t, instruction: null, voice: selectedVoice }));
     }
 
     btn.disabled = true;
