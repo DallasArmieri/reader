@@ -857,18 +857,80 @@
     speakerMap = {};
 
     try {
+      // Detect speakers and build voice map
       const speakers = await detectSpeakers(text);
       const autoMap = autoAssignVoices(speakers);
       speakerMap = { ...autoMap };
+
+      // Also update the speaker table in Voice+ tab silently
       renderSpeakerTable(speakers, speakerMap);
-      // Switch to Voice+ tab to show the table
-      switchTab('voiceplus');
+
+      // Now annotate text by segment — assign each segment a speaker
+      content.innerHTML = '<div class="spinner-sm"></div> Assigning…';
+      const mode = getGranularity();
+      const rawSegments = splitByGranularity(text, mode);
+      const segments = rawSegments.map(s => typeof s === 'string' ? s : s.text);
+      const speakerNames = Object.keys(speakerMap).join(', ');
+
+      const voiceAnnotations = [];
+      for (let i = 0; i < segments.length; i++) {
+        content.innerHTML = `<div class="spinner-sm"></div> ${i+1}/${segments.length}`;
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            max_tokens: 40,
+            messages: [{
+              role: 'user',
+              content: `Who is the primary speaker in this passage? Choose from: ${speakerNames}. Reply with JSON only: {"speaker": "Name"}
+
+Text: ${segments[i].slice(0, 400)}`
+            }]
+          })
+        });
+        let speaker = 'Narrator';
+        if (res.ok) {
+          try {
+            const d = await res.json();
+            const sp = JSON.parse(d.choices[0].message.content.trim().replace(/```json|```/g,''));
+            speaker = sp.speaker || 'Narrator';
+          } catch(e) {}
+        }
+        const voice = speakerMap[speaker] || selectedVoice;
+        voiceAnnotations.push({ text: segments[i], speaker, voice });
+      }
+
+      // Render annotated view in textarea area
+      renderVoiceAnnotation(voiceAnnotations);
+
     } catch(err) {
       alert('Voice parse failed: ' + err.message);
     } finally {
       btn.disabled = false;
       content.textContent = '◆ Parse Voice';
     }
+  }
+
+  function renderVoiceAnnotation(segments) {
+    const textarea = document.getElementById('textInput');
+    const av = document.getElementById('annotatedView');
+    textarea.style.display = 'none';
+    av.style.display = 'block';
+    av.innerHTML = `<div class="annotated-view">${
+      segments.map(s => {
+        const color = VOICE_COLORS[s.voice] || '#8a877f';
+        const voiceName = VOICE_LABELS[s.voice] || s.voice;
+        return `
+        <div class="annotated-chunk">
+          <div class="emotion-pill" style="color:${color};border-color:${color}33;background:${color}11;">
+            ◆ ${s.speaker} <span style="opacity:0.6;font-size:9px;">· ${voiceName}</span>
+          </div>
+          <div class="annotated-text">${s.text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
+        </div>`;
+      }).join('')
+    }</div>
+    <button class="clear-parse" onclick="clearParse()">× Clear &amp; edit text</button>`;
   }
 
   async function detectSpeakers(fullText) {
