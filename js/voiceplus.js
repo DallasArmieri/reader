@@ -298,8 +298,7 @@ async function parseEmotion() {
       if (multiVoiceOn) {
         if (voiceMode === 'narrator') {
           const nv = document.getElementById('narratorVoice')?.value || selectedVoice;
-          const dv = document.getElementById('dialogueVoice')?.value || selectedVoice;
-          segVoice = isDialogue(segments[i]) ? dv : nv;
+          segVoice = isDialogue(segments[i]) ? selectedVoice : nv;
         } else if (voiceMode === 'voice') {
           const speakerNames = Object.keys(speakerMap).join(', ');
           const speakerRes = await fetch('https://api.openai.com/v1/chat/completions', {

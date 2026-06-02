@@ -192,7 +192,7 @@
           <div class="model-row" style="margin-bottom:12px;">
             <div class="model-btn selected" id="modeNarrator" onclick="setVoiceMode('narrator')">
               <span class="model-label">Narrator</span>
-              <span class="model-desc">Narrator + dialogue voices</span>
+              <span class="model-desc">Narrator + character voice</span>
             </div>
             <div class="model-btn" id="modeVoice" onclick="setVoiceMode('voice')">
               <span class="model-label">Voice</span>
@@ -211,17 +211,7 @@
               <option value="coral">Coral — Friendly Female</option>
               <option value="sage">Sage — Calm Male</option>
             </select>
-            <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:6px;letter-spacing:0.1em;text-transform:uppercase;">Dialogue voice</div>
-            <select class="styled-select" id="dialogueVoice">
-              <option value="nova">Nova — Warm Female</option>
-              <option value="alloy">Alloy — Neutral</option>
-              <option value="shimmer">Shimmer — Clear Female</option>
-              <option value="coral">Coral — Friendly Female</option>
-              <option value="onyx">Onyx — Deep Male</option>
-              <option value="echo">Echo — Crisp Male</option>
-              <option value="fable">Fable — Expressive Male</option>
-              <option value="sage">Sage — Calm Male</option>
-            </select>
+            <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);line-height:1.6;margin-top:4px;">Dialogue uses the voice selected on the Read tab.</div>
           </div>
           <div id="voiceModeUI" style="display:none;">
             <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);line-height:1.7;margin-bottom:10px;">
