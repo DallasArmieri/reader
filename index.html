@@ -991,7 +991,12 @@ ${fullText.slice(0, 2000)}`
   }
 
   function renderSpeakerTable(speakers, map) {
+    // Only render if voice mode is active
+    if (voiceMode !== 'voice') return;
+    const voiceModeUI = document.getElementById('voiceModeUI');
+    if (voiceModeUI) voiceModeUI.style.display = 'block';
     const table = document.getElementById('speakerTable');
+    if (!table) return;
     table.style.display = 'block';
     table.innerHTML = `<div class="speaker-table-wrap">${
       speakers.map(s => {
@@ -1024,7 +1029,7 @@ ${fullText.slice(0, 2000)}`
     try {
       // ── Voice mode: detect speakers first ────────────────
       const multiVoiceOn = document.getElementById('multiVoiceToggle')?.checked;
-      if (voicePlusEnabled && multiVoiceOn && voiceMode === 'voice') {
+      if (multiVoiceOn && voiceMode === 'voice') {
         if (content) content.innerHTML = `<div class="spinner-sm"></div> Detecting speakers…`;
         const speakers = await detectSpeakers(text);
         const autoMap = autoAssignVoices(speakers);
@@ -1041,7 +1046,7 @@ ${fullText.slice(0, 2000)}`
         // Determine voice for this segment
         let segVoice = selectedVoice;
         const multiVoiceOn = document.getElementById('multiVoiceToggle')?.checked;
-        if (voicePlusEnabled && multiVoiceOn) {
+        if (multiVoiceOn) {
           if (voiceMode === 'narrator') {
             const narratorVoice = document.getElementById('narratorVoice')?.value || selectedVoice;
             const dialogueVoice = document.getElementById('dialogueVoice')?.value || selectedVoice;
