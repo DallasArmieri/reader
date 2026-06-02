@@ -203,13 +203,17 @@
 
     <div class="section">
       <div class="section-label">Text</div>
-      <div id="parseShortcut" style="display:none;margin-bottom:8px;gap:8px;flex-wrap:wrap;">
-        <button class="btn-parse-inline" onclick="parseEmotion()" id="parseShortcutBtn">
-          <span id="parseShortcutContent">✦ Parse Emotion</span>
-        </button>
-        <button class="btn-parse-inline" onclick="parseVoice()" id="parseVoiceBtn" style="display:none;border-color:rgba(110,155,201,0.4);color:#6e9bc9;">
-          <span id="parseVoiceBtnContent">◆ Parse Voice</span>
-        </button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <div id="parseShortcut" style="display:none;">
+          <button class="btn-parse-inline" onclick="parseEmotion()" id="parseShortcutBtn">
+            <span id="parseShortcutContent">✦ Parse Emotion</span>
+          </button>
+        </div>
+        <div id="parseVoiceShortcut" style="display:none;">
+          <button class="btn-parse-inline" onclick="parseVoice()" id="parseVoiceBtn" style="border-color:rgba(110,155,201,0.4);color:#6e9bc9;">
+            <span id="parseVoiceBtnContent">◆ Parse Voice</span>
+          </button>
+        </div>
       </div>
       <textarea id="textInput" placeholder="Paste your article or any text here…" oninput="onTextInput()"></textarea>
       <!-- Annotated view shown after parsing -->
@@ -289,7 +293,7 @@
       <a class="download-link" id="downloadLink" href="#" download="audio.mp3">↓ Save MP3</a>
     </div>
 
-    <div class="footer-note">OpenAI TTS · pay-as-you-go · no monthly fee</div>
+    <div class="footer-note">OpenAI TTS · pay-as-you-go · no monthly fee<br>v10</div>
   </div>
 
   <!-- HISTORY PANEL -->
@@ -775,10 +779,12 @@
 
   function setVoiceMode(mode) {
     voiceMode = mode;
-    document.getElementById('modeNarrator').classList.toggle('selected', mode === 'narrator');
-    document.getElementById('modeVoice').classList.toggle('selected', mode === 'voice');
-    document.getElementById('narratorModeUI').style.display = mode === 'narrator' ? 'block' : 'none';
-    document.getElementById('voiceModeUI').style.display = mode === 'voice' ? 'block' : 'none';
+    document.getElementById('modeNarrator')?.classList.toggle('selected', mode === 'narrator');
+    document.getElementById('modeVoice')?.classList.toggle('selected', mode === 'voice');
+    const narratorUI = document.getElementById('narratorModeUI');
+    const voiceUI = document.getElementById('voiceModeUI');
+    if (narratorUI) narratorUI.style.display = mode === 'narrator' ? 'block' : 'none';
+    if (voiceUI) voiceUI.style.display = mode === 'voice' ? 'block' : 'none';
     parsedEmotionChunks = null;
     speakerMap = {};
     clearParse();
@@ -787,9 +793,8 @@
 
   function updateParseVoiceBtnVisibility() {
     const multiOn = document.getElementById('multiVoiceToggle')?.checked;
-    const show = multiOn && voiceMode === 'voice';
-    const btn = document.getElementById('parseVoiceBtn');
-    if (btn) btn.style.display = show ? 'inline-flex' : 'none';
+    const wrapper = document.getElementById('parseVoiceShortcut');
+    if (wrapper) wrapper.style.display = multiOn ? 'block' : 'none';
   }
 
   function updateGranularityHint() {
@@ -1243,7 +1248,7 @@ Text: ${segments[i].slice(0, 600)}`
       window.history.replaceState({}, '', window.location.pathname);
     }
   })();
-  // ── Service Worker ────────────────────────────────────
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/reader/sw.js').catch(() => {});
