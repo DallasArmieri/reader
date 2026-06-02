@@ -216,7 +216,82 @@ function updateCount() {
   }
 }
 
+// ── Import Menu ───────────────────────────────────────
+
+function toggleImportMenu() {
+  const menu = document.getElementById('importMenu');
+  const chevron = document.getElementById('importChevron');
+  const isOpen = menu.style.display !== 'none';
+  menu.style.display = isOpen ? 'none' : 'block';
+  chevron.textContent = isOpen ? '▾' : '▴';
+}
+
+function selectImportOption(type) {
+  document.getElementById('importMenu').style.display = 'none';
+  document.getElementById('importChevron').textContent = '▾';
+  if (type === 'link') {
+    const row = document.getElementById('urlInputRow');
+    row.style.display = 'flex';
+    document.getElementById('urlInput').focus();
+  } else {
+    document.getElementById('fileInput').click();
+  }
+}
+
+function handleFileUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('textInput').value = e.target.result;
+    document.getElementById('textInput').dataset.title = file.name.replace(/\.[^.]+$/, '');
+    onTextInput();
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('importWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('importMenu').style.display = 'none';
+    document.getElementById('importChevron').textContent = '▾';
+  }
+});
+
 // ── URL Fetch ─────────────────────────────────────────
+
+async function fetchHtmlViaProxy(url) {
+  // Try allorigins first, fall back to corsproxy.io
+  try {
+    const res = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url));
+    if (res.ok) {
+      const data = await res.json();
+      if (data.contents && data.contents.length > 100) return data.contents;
+    }
+  } catch(e) {}
+  const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
+  if (!res.ok) throw new Error('Failed to fetch page');
+  return await res.text();
+}
+
+function extractTextFromDoc(el) {
+  // innerText doesn't work on DOMParser documents (not rendered), so walk the tree manually
+  const BLOCK = new Set(['P','DIV','H1','H2','H3','H4','H5','H6','LI','TD','TH',
+    'BLOCKQUOTE','PRE','SECTION','ARTICLE','MAIN','FIGURE','FIGCAPTION','BR']);
+  let out = '';
+  (function walk(node) {
+    if (node.nodeType === 3) {
+      out += node.textContent;
+    } else if (node.nodeType === 1) {
+      if (BLOCK.has(node.tagName)) out += '\n';
+      node.childNodes.forEach(walk);
+      if (BLOCK.has(node.tagName)) out += '\n';
+    }
+  })(el);
+  return out.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 async function fetchUrl() {
   const url = document.getElementById('urlInput').value.trim();
   if (!url) return;
@@ -225,23 +300,19 @@ async function fetchUrl() {
   btn.disabled = true;
   content.innerHTML = '<div class="spinner-sm"></div>';
   try {
-    const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error('Failed to fetch page');
-    const data = await res.json();
-    const html = data.contents;
+    const html = await fetchHtmlViaProxy(url);
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     ['script','style','nav','footer','header','aside','form','noscript','iframe'].forEach(tag => {
       doc.querySelectorAll(tag).forEach(el => el.remove());
     });
     const articleEl = doc.querySelector('article') || doc.querySelector('main') || doc.querySelector('[role="main"]') || doc.body;
-    let text = articleEl.innerText || articleEl.textContent || '';
-    text = text.replace(/\n{3,}/g, '\n\n').replace(/[ \t]+/g, ' ').trim();
+    const text = extractTextFromDoc(articleEl);
     if (text.length < 100) throw new Error('Could not extract article text from this page');
     const title = doc.querySelector('h1')?.textContent?.trim() || doc.title || url;
     document.getElementById('textInput').value = text;
     document.getElementById('urlInput').value = '';
+    document.getElementById('urlInputRow').style.display = 'none';
     document.getElementById('textInput').dataset.title = title;
     updateCount();
   } catch (err) {

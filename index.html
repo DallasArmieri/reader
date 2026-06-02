@@ -31,15 +31,34 @@
   <!-- READ PANEL -->
   <div class="panel active" id="panel-read">
 
-    <div class="section">
-      <div class="section-label">Fetch from URL</div>
-      <div class="url-row">
-        <input type="url" id="urlInput" placeholder="https://example.com/article" />
-        <button class="btn-fetch" id="fetchBtn" onclick="fetchUrl()">
-          <span id="fetchBtnContent">Fetch</span>
+    <div class="import-voice-row">
+      <div class="import-wrap" id="importWrap">
+        <button class="btn-import" id="importBtn" onclick="toggleImportMenu()">
+          ↑ Import <span id="importChevron">▾</span>
         </button>
+        <div class="import-menu" id="importMenu" style="display:none;">
+          <button class="import-menu-item" onclick="selectImportOption('link')">⊕ &nbsp;Paste link</button>
+          <button class="import-menu-item" onclick="selectImportOption('file')">↑ &nbsp;Upload file</button>
+        </div>
       </div>
+      <select class="styled-select voice-inline" id="voiceSelect" onchange="selectedVoice = this.value; saveSettings()">
+        <option value="alloy">Alloy — Neutral</option>
+        <option value="nova">Nova — Warm Female</option>
+        <option value="onyx">Onyx — Deep Male</option>
+        <option value="shimmer">Shimmer — Clear Female</option>
+        <option value="echo">Echo — Crisp Male</option>
+        <option value="fable">Fable — Expressive Male</option>
+        <option value="coral">Coral — Friendly Female</option>
+        <option value="sage">Sage — Calm Male</option>
+      </select>
     </div>
+    <div class="url-input-row" id="urlInputRow" style="display:none;">
+      <input type="url" id="urlInput" placeholder="https://example.com/article" />
+      <button class="btn-fetch" id="fetchBtn" onclick="fetchUrl()">
+        <span id="fetchBtnContent">Fetch</span>
+      </button>
+    </div>
+    <input type="file" id="fileInput" accept=".txt,.text" style="display:none;" onchange="handleFileUpload(this)">
 
     <div class="section">
       <div class="section-label">Text</div>
@@ -62,20 +81,6 @@
         <span id="costEst">~$0.000</span>
       </div>
       <div class="read-time" id="readTime"></div>
-    </div>
-
-    <div class="section">
-      <div class="section-label">Voice</div>
-      <select class="styled-select" id="voiceSelect" onchange="selectedVoice = this.value; saveSettings()">
-        <option value="alloy">Alloy — Neutral</option>
-        <option value="nova">Nova — Warm Female</option>
-        <option value="onyx">Onyx — Deep Male</option>
-        <option value="shimmer">Shimmer — Clear Female</option>
-        <option value="echo">Echo — Crisp Male</option>
-        <option value="fable">Fable — Expressive Male</option>
-        <option value="coral">Coral — Friendly Female</option>
-        <option value="sage">Sage — Calm Male</option>
-      </select>
     </div>
 
     <div class="section">
