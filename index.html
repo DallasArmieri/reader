@@ -293,7 +293,7 @@
       <a class="download-link" id="downloadLink" href="#" download="audio.mp3">↓ Save MP3</a>
     </div>
 
-    <div class="footer-note">OpenAI TTS · pay-as-you-go · no monthly fee<br>v10</div>
+    <div class="footer-note">OpenAI TTS · pay-as-you-go · no monthly fee<br><span id="writeTime"></span></div>
   </div>
 
   <!-- HISTORY PANEL -->
@@ -906,6 +906,15 @@ Text: ${segments[i].slice(0, 400)}`
         voiceAnnotations.push({ text: segments[i], speaker, voice });
       }
 
+      // Store as parsedEmotionChunks so generateAudio picks up voice assignments
+      parsedEmotionChunks = voiceAnnotations.map(a => ({
+        text: a.text,
+        emotion: null,
+        instruction: null,
+        voice: a.voice,
+        speaker: a.speaker
+      }));
+
       // Render annotated view in textarea area
       renderVoiceAnnotation(voiceAnnotations);
 
@@ -1338,6 +1347,12 @@ Text: ${segments[i].slice(0, 600)}`
       window.history.replaceState({}, '', window.location.pathname);
     }
   })();
+
+  // ── Document write time ───────────────────────────────
+  document.getElementById('writeTime').textContent = 'Generated ' + new Date(document.lastModified).toLocaleString('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true
+  });
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
