@@ -56,6 +56,7 @@ if ('serviceWorker' in navigator) {
 
 // Restore persisted settings on load
 loadSettings();
+initPlayer();
 
 // ── Tabs ──────────────────────────────────────────────
 function switchTab(tab) {
@@ -108,6 +109,89 @@ function skipAudio(seconds) {
   const audio = document.getElementById('audioPlayer');
   if (!audio) return;
   audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + seconds));
+}
+
+// ── Custom Player ─────────────────────────────────────
+
+function formatTime(sec) {
+  if (!isFinite(sec) || isNaN(sec)) return '0:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+function togglePlayPause() {
+  const audio = document.getElementById('audioPlayer');
+  if (audio.paused) audio.play(); else audio.pause();
+}
+
+function updatePlayerProgress() {
+  const audio = document.getElementById('audioPlayer');
+  const fill = document.getElementById('playerScrubberFill');
+  const elapsed = document.getElementById('playerElapsed');
+  const dur = document.getElementById('playerDuration');
+  if (!fill || !elapsed || !dur) return;
+  if (audio.duration) {
+    fill.style.width = (audio.currentTime / audio.duration * 100) + '%';
+    dur.textContent = formatTime(audio.duration);
+  }
+  elapsed.textContent = formatTime(audio.currentTime);
+}
+
+function initPlayer() {
+  const audio = document.getElementById('audioPlayer');
+
+  audio.addEventListener('timeupdate', () => {
+    updatePlayerProgress();
+    if (currentArticleId) savePosition(currentArticleId, Math.floor(audio.currentTime));
+    if ('mediaSession' in navigator && audio.duration) {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: audio.duration,
+          playbackRate: audio.playbackRate,
+          position: audio.currentTime
+        });
+      } catch(e) {}
+    }
+  });
+
+  audio.addEventListener('loadedmetadata', () => {
+    updatePlayerProgress();
+    if (currentArticleId) saveDuration(currentArticleId, audio.duration);
+  });
+
+  audio.addEventListener('play', () => {
+    const btn = document.getElementById('playPauseBtn');
+    if (btn) btn.textContent = '⏸';
+  });
+
+  audio.addEventListener('pause', () => {
+    const btn = document.getElementById('playPauseBtn');
+    if (btn) btn.textContent = '▶';
+  });
+
+  document.getElementById('playerScrubberTrack').addEventListener('click', e => {
+    if (!audio.duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    audio.currentTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
+  });
+}
+
+function setupMediaSession(title) {
+  if (!('mediaSession' in navigator)) return;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: title,
+    artist: 'Reader',
+    artwork: [
+      { src: '/reader/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: '/reader/icon-512.png', sizes: '512x512', type: 'image/png' }
+    ]
+  });
+  const audio = document.getElementById('audioPlayer');
+  navigator.mediaSession.setActionHandler('play', () => audio.play());
+  navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+  navigator.mediaSession.setActionHandler('seekbackward', ({ seekOffset } = {}) => skipAudio(-(seekOffset || 15)));
+  navigator.mediaSession.setActionHandler('seekforward', ({ seekOffset } = {}) => skipAudio(seekOffset || 15));
 }
 
 // ── Char count & read time ────────────────────────────
@@ -227,6 +311,10 @@ async function generateAudio() {
   if (!OPENAI_KEY) { showError('No API key — go to Settings and add your OpenAI key.'); return; }
   if (!text) { showError('Please paste some text first.'); return; }
 
+  const rate = selectedModel === 'tts-1-hd' ? 0.030 : 0.015;
+  const estimatedCost = text.length / 1000 * rate;
+  if (estimatedCost > 0.10 && !confirm(`Estimated cost: $${estimatedCost.toFixed(3)}. Generate audio?`)) return;
+
   const multiVoiceOn = document.getElementById('multiVoiceToggle')?.checked;
 
   // Build chunks
@@ -287,14 +375,7 @@ async function generateAudio() {
     playerBox.className = 'player visible';
     progressBox.className = 'progress-box';
     audio.play();
-
-    audio.addEventListener('loadedmetadata', () => {
-      if (currentArticleId) saveDuration(currentArticleId, audio.duration);
-    }, { once: true });
-
-    audio.ontimeupdate = () => {
-      if (currentArticleId) savePosition(currentArticleId, Math.floor(audio.currentTime));
-    };
+    setupMediaSession(title);
 
   } catch (err) {
     showError(err.message);

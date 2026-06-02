@@ -128,6 +128,7 @@ function loadFromHistory(id) {
       audio.addEventListener('loadedmetadata', () => {
         if (item.position > 0) audio.currentTime = item.position;
       }, { once: true });
+      setupMediaSession(item.title);
     } catch(e) {}
   }
 }
