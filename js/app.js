@@ -54,6 +54,9 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// Restore persisted settings on load
+loadSettings();
+
 // ── Tabs ──────────────────────────────────────────────
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -79,6 +82,7 @@ function selectModel(el, model) {
   el.classList.add('selected');
   selectedModel = model;
   updateCount();
+  saveSettings();
 }
 
 // ── Speed ─────────────────────────────────────────────
@@ -87,6 +91,7 @@ function updateSpeed(val) {
   const display = playbackSpeed % 1 === 0 ? playbackSpeed.toFixed(1) : playbackSpeed.toFixed(2).replace(/0+$/, '');
   document.getElementById('speedDisplayRead').textContent = display + '×';
   updateCount();
+  saveSettings();
 }
 
 function updateSpeedRead(val) { updateSpeed(val); }

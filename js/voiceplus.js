@@ -54,6 +54,7 @@ function toggleVoicePlus(enabled) {
     parsedEmotionData = null;
     rebuildAndRender();
   }
+  saveSettings();
 }
 
 function toggleMultiVoiceSection(enabled) {
@@ -67,6 +68,7 @@ function toggleMultiVoiceSection(enabled) {
     rebuildAndRender();
   }
   updateParseVoiceBtnVisibility();
+  saveSettings();
 }
 
 function setVoiceMode(mode) {
@@ -85,6 +87,7 @@ function setVoiceMode(mode) {
     rebuildAndRender();
   }
   updateParseVoiceBtnVisibility();
+  saveSettings();
 }
 
 // ── Clear & Text Input ────────────────────────────────

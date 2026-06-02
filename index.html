@@ -66,7 +66,7 @@
 
     <div class="section">
       <div class="section-label">Voice</div>
-      <select class="styled-select" id="voiceSelect" onchange="selectedVoice = this.value">
+      <select class="styled-select" id="voiceSelect" onchange="selectedVoice = this.value; saveSettings()">
         <option value="alloy">Alloy — Neutral</option>
         <option value="nova">Nova — Warm Female</option>
         <option value="onyx">Onyx — Deep Male</option>
@@ -170,7 +170,7 @@
 
     <div class="section" id="parseSection" style="display:none;">
       <div class="section-label">Granularity</div>
-      <select class="styled-select" id="parseGranularity" onchange="parsedEmotionChunks = null; clearParse(); updateGranularityHint();">
+      <select class="styled-select" id="parseGranularity" onchange="parsedEmotionChunks = null; clearParse(); updateGranularityHint(); saveSettings();">
         <option value="line">Line — most expressive, one call per line</option>
         <option value="beat">Scene Beat — 2-3 lines grouped</option>
         <option value="block">Paragraph Block — 4-6 lines grouped</option>
@@ -180,7 +180,7 @@
         Each line gets its own emotion analysis and TTS call.
       </div>
       <div class="section-label" style="margin-top:16px;">Genre / Tone <span style="font-size:9px;font-weight:400;text-transform:none;letter-spacing:0;font-style:italic;opacity:0.7;">optional</span></div>
-      <input type="text" id="genreToneInput" placeholder="e.g. literary thriller, cozy mystery, horror…" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:13px;font-family:'DM Mono',monospace;color:var(--text);outline:none;" />
+      <input type="text" id="genreToneInput" placeholder="e.g. literary thriller, cozy mystery, horror…" oninput="saveSettings()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:13px;font-family:'DM Mono',monospace;color:var(--text);outline:none;" />
       <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:6px;line-height:1.7;">Calibrates emotion detection across the whole text.</div>
     </div>
 
@@ -210,7 +210,7 @@
           </div>
           <div id="narratorModeUI" style="display:block;">
             <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:6px;letter-spacing:0.1em;text-transform:uppercase;">Narrator voice</div>
-            <select class="styled-select" id="narratorVoice" style="margin-bottom:12px;">
+            <select class="styled-select" id="narratorVoice" onchange="saveSettings()" style="margin-bottom:12px;">
               <option value="onyx">Onyx — Deep Male</option>
               <option value="alloy">Alloy — Neutral</option>
               <option value="echo">Echo — Crisp Male</option>
@@ -221,7 +221,7 @@
               <option value="sage">Sage — Calm Male</option>
             </select>
             <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:6px;margin-top:12px;letter-spacing:0.1em;text-transform:uppercase;">Speaker voice</div>
-            <select class="styled-select" id="dialogueVoice">
+            <select class="styled-select" id="dialogueVoice" onchange="saveSettings()">
               <option value="nova">Nova — Warm Female</option>
               <option value="alloy">Alloy — Neutral</option>
               <option value="shimmer">Shimmer — Clear Female</option>

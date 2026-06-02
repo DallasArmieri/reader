@@ -135,3 +135,86 @@ function loadFromHistory(id) {
 function escHtml(str) {
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// ── Persistent Settings ───────────────────────────────
+
+function saveSettings() {
+  const settings = {
+    voice: selectedVoice,
+    model: selectedModel,
+    speed: playbackSpeed,
+    voicePlusEnabled: voicePlusEnabled,
+    multiVoiceEnabled: document.getElementById('multiVoiceToggle')?.checked || false,
+    voiceMode: voiceMode,
+    granularity: document.getElementById('parseGranularity')?.value || 'line',
+    genreTone: document.getElementById('genreToneInput')?.value || '',
+    narratorVoice: document.getElementById('narratorVoice')?.value || 'onyx',
+    dialogueVoice: document.getElementById('dialogueVoice')?.value || 'nova'
+  };
+  localStorage.setItem('reader_settings', JSON.stringify(settings));
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem('reader_settings');
+    if (!raw) return;
+    const s = JSON.parse(raw);
+
+    if (s.voice) {
+      selectedVoice = s.voice;
+      const el = document.getElementById('voiceSelect');
+      if (el) el.value = s.voice;
+    }
+
+    if (s.model) {
+      selectedModel = s.model;
+      document.getElementById('model-hd')?.classList.toggle('selected', s.model === 'tts-1-hd');
+      document.getElementById('model-std')?.classList.toggle('selected', s.model === 'tts-1');
+    }
+
+    if (s.speed != null) {
+      playbackSpeed = parseFloat(s.speed);
+      const slider = document.getElementById('speedSliderRead');
+      if (slider) slider.value = s.speed;
+      const display = playbackSpeed % 1 === 0 ? playbackSpeed.toFixed(1) : playbackSpeed.toFixed(2).replace(/0+$/, '');
+      const el = document.getElementById('speedDisplayRead');
+      if (el) el.textContent = display + '×';
+    }
+
+    if (s.granularity) {
+      const el = document.getElementById('parseGranularity');
+      if (el) { el.value = s.granularity; updateGranularityHint(); }
+    }
+
+    if (s.genreTone) {
+      const el = document.getElementById('genreToneInput');
+      if (el) el.value = s.genreTone;
+    }
+
+    if (s.narratorVoice) {
+      const el = document.getElementById('narratorVoice');
+      if (el) el.value = s.narratorVoice;
+    }
+
+    if (s.dialogueVoice) {
+      const el = document.getElementById('dialogueVoice');
+      if (el) el.value = s.dialogueVoice;
+    }
+
+    if (s.multiVoiceEnabled) {
+      const el = document.getElementById('multiVoiceToggle');
+      if (el) { el.checked = true; toggleMultiVoiceSection(true); }
+    }
+
+    if (s.voiceMode && s.multiVoiceEnabled) {
+      setVoiceMode(s.voiceMode);
+    }
+
+    if (s.voicePlusEnabled) {
+      const el = document.getElementById('voicePlusToggle');
+      if (el) { el.checked = true; toggleVoicePlus(true); }
+    }
+
+  } catch(e) {}
+  updateCount();
+}

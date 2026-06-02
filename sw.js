@@ -1,7 +1,11 @@
-const CACHE = 'reader-v1';
+const CACHE = 'reader-v2';
 const ASSETS = [
   '/reader/',
   '/reader/index.html',
+  '/reader/css/style.css',
+  '/reader/js/storage.js',
+  '/reader/js/voiceplus.js',
+  '/reader/js/app.js',
   '/reader/manifest.json',
   '/reader/icon-192.png',
   '/reader/icon-512.png'
@@ -20,20 +24,21 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Always go network-first for API calls
-  if (e.request.url.includes('openai.com') || e.request.url.includes('googleapis.com')) {
-    return;
-  }
+  if (
+    e.request.url.includes('openai.com') ||
+    e.request.url.includes('googleapis.com') ||
+    e.request.url.includes('allorigins.win')
+  ) return;
+
+  // Network-first: always fetch fresh, fall back to cache when offline
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(res => {
-        if (res && res.status === 200 && res.type === 'basic') {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-        }
-        return res;
-      });
-    }).catch(() => caches.match('/reader/'))
+    fetch(e.request).then(res => {
+      if (res && res.status === 200 && res.type === 'basic') {
+        caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+      }
+      return res;
+    }).catch(() =>
+      caches.match(e.request).then(cached => cached || caches.match('/reader/'))
+    )
   );
 });
