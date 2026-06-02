@@ -220,15 +220,15 @@ function updateCount() {
 
 function toggleImportMenu() {
   const menu = document.getElementById('importMenu');
-  const chevron = document.getElementById('importChevron');
+  const btn = document.getElementById('importBtn');
   const isOpen = menu.style.display !== 'none';
   menu.style.display = isOpen ? 'none' : 'block';
-  chevron.textContent = isOpen ? '▾' : '▴';
+  btn.classList.toggle('open', !isOpen);
 }
 
 function selectImportOption(type) {
   document.getElementById('importMenu').style.display = 'none';
-  document.getElementById('importChevron').textContent = '▾';
+  document.getElementById('importBtn').classList.remove('open');
   if (type === 'link') {
     const row = document.getElementById('urlInputRow');
     row.style.display = 'flex';
@@ -255,7 +255,7 @@ document.addEventListener('click', e => {
   const wrap = document.getElementById('importWrap');
   if (wrap && !wrap.contains(e.target)) {
     document.getElementById('importMenu').style.display = 'none';
-    document.getElementById('importChevron').textContent = '▾';
+    document.getElementById('importBtn').classList.remove('open');
   }
 });
 
@@ -292,6 +292,48 @@ function extractTextFromDoc(el) {
   return out.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
 }
 
+function extractArticle(doc) {
+  // Remove structural noise tags
+  ['script','style','nav','header','footer','aside','form','noscript','iframe',
+   'button','select','svg','canvas','video','audio'].forEach(tag => {
+    doc.querySelectorAll(tag).forEach(el => el.remove());
+  });
+
+  // Remove elements whose class/id suggests ads, sidebars, or other non-content
+  const NOISE = /\b(ad|ads|advert|advertisement|banner|promo|sponsor|social|share|sharing|related|recommend|trending|popular|comment|discuss|cookie|gdpr|consent|newsletter|subscribe|signup|sidebar|widget|flyout|popup|modal|overlay|toolbar|breadcrumb|pagination|tag-cloud|author-bio|bio-box|read-next|also-read|more-from|outbrain|taboola|sticky|masthead)\b/i;
+  doc.querySelectorAll('[class],[id]').forEach(el => {
+    const str = (el.getAttribute('class') || '') + ' ' + (el.getAttribute('id') || '');
+    if (NOISE.test(str)) el.remove();
+  });
+
+  // Try semantic and common article selectors in priority order
+  const CONTENT_SELECTORS = [
+    'article',
+    '[itemprop="articleBody"]',
+    '[class*="article__body"]', '[class*="article-body"]', '[class*="article-content"]',
+    '[class*="story-body"]',    '[class*="story-content"]',
+    '[class*="post-body"]',     '[class*="post-content"]',  '[class*="post__content"]',
+    '[class*="entry-content"]', '[class*="content-body"]',
+    '[class*="chapter-content"]','[class*="chapter-inner"]',
+    'main', '[role="main"]',
+  ];
+  for (const sel of CONTENT_SELECTORS) {
+    const el = doc.querySelector(sel);
+    if (el && el.textContent.trim().length > 200) return el;
+  }
+
+  // Fallback: score divs by text density (link-heavy = nav/ads, text-heavy = content)
+  let best = doc.body, bestScore = 0;
+  doc.querySelectorAll('div, section').forEach(el => {
+    const text = el.textContent.trim();
+    if (text.length < 200) return;
+    const linkChars = [...el.querySelectorAll('a')].reduce((n, a) => n + a.textContent.length, 0);
+    const score = text.length * (1 - linkChars / text.length);
+    if (score > bestScore) { bestScore = score; best = el; }
+  });
+  return best;
+}
+
 async function fetchUrl() {
   const url = document.getElementById('urlInput').value.trim();
   if (!url) return;
@@ -303,13 +345,10 @@ async function fetchUrl() {
     const html = await fetchHtmlViaProxy(url);
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
-    ['script','style','nav','footer','header','aside','form','noscript','iframe'].forEach(tag => {
-      doc.querySelectorAll(tag).forEach(el => el.remove());
-    });
-    const articleEl = doc.querySelector('article') || doc.querySelector('main') || doc.querySelector('[role="main"]') || doc.body;
+    const title = doc.querySelector('h1')?.textContent?.trim() || doc.title || url;
+    const articleEl = extractArticle(doc);
     const text = extractTextFromDoc(articleEl);
     if (text.length < 100) throw new Error('Could not extract article text from this page');
-    const title = doc.querySelector('h1')?.textContent?.trim() || doc.title || url;
     document.getElementById('textInput').value = text;
     document.getElementById('urlInput').value = '';
     document.getElementById('urlInputRow').style.display = 'none';

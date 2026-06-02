@@ -35,8 +35,8 @@ body { background: var(--bg); color: var(--text); font-family: 'Lora', Georgia, 
 /* Import + Voice row */
 .import-voice-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
 .import-wrap { position: relative; flex-shrink: 0; }
-.btn-import { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-dim); cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 6px; transition: all 0.15s; }
-.btn-import:active { border-color: var(--accent); color: var(--accent); }
+.btn-import { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 11px 36px 11px 14px; font-size: 14px; font-family: 'Lora', Georgia, serif; color: var(--text); outline: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a4845' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; cursor: pointer; transition: border-color 0.2s; white-space: nowrap; }
+.btn-import.open, .btn-import:focus { border-color: var(--accent-dim); outline: none; }
 .import-menu { position: absolute; top: calc(100% + 4px); left: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; z-index: 100; min-width: 148px; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
 .import-menu-item { display: block; width: 100%; padding: 10px 14px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-dim); background: none; border: none; cursor: pointer; text-align: left; transition: background 0.1s; }
 .import-menu-item:active, .import-menu-item:hover { background: var(--surface); color: var(--accent); }
