@@ -1,3 +1,17 @@
+// ── Concurrency helper ────────────────────────────────
+async function withConcurrency(items, limit, fn) {
+  const results = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i], i);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
+
 // ── Storage & History ─────────────────────────────────
 
 const MAX_HISTORY = 20;
@@ -23,6 +37,12 @@ function savePosition(id, position) {
   if (item) { item.position = position; saveHistory(history); }
 }
 
+function saveDuration(id, duration) {
+  const history = getHistory();
+  const item = history.find(h => h.id === id);
+  if (item && duration > 0) { item.duration = Math.floor(duration); saveHistory(history); }
+}
+
 function deleteHistory(e, id) {
   e.stopPropagation();
   const history = getHistory().filter(h => h.id !== id);
@@ -35,13 +55,28 @@ function deleteHistory(e, id) {
 function renderHistory() {
   const list = document.getElementById('historyList');
   const history = getHistory();
-  if (history.length === 0) {
-    list.innerHTML = '<div class="history-empty">No history yet.<br>Generate audio to see it here.</div>';
+  const query = (document.getElementById('historySearch')?.value || '').toLowerCase().trim();
+  const items = query ? history.filter(h => h.title.toLowerCase().includes(query)) : history;
+
+  if (items.length === 0) {
+    list.innerHTML = '<div class="history-empty">' + (query ? 'No matches.' : 'No history yet.<br>Generate audio to see it here.') + '</div>';
     return;
   }
-  list.innerHTML = history.map(item => {
+  list.innerHTML = items.map(item => {
     const date = new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const mins = item.position > 0 ? Math.floor(item.position / 60) + 'm ' + Math.floor(item.position % 60) + 's' : null;
+    let resumeHtml = '';
+    if (item.position > 0) {
+      if (item.duration > 0) {
+        const pctDone = Math.round(item.position / item.duration * 100);
+        const pctLeft = 100 - pctDone;
+        const minsLeft = Math.round((item.duration - item.position) / 60);
+        resumeHtml = `<div class="history-resume">${pctDone}% · ${minsLeft} min left</div>`;
+      } else {
+        const m = Math.floor(item.position / 60);
+        const s = Math.floor(item.position % 60);
+        resumeHtml = `<div class="history-resume">Resume at ${m}m ${s}s</div>`;
+      }
+    }
     return `
       <div class="history-item" onclick="loadFromHistory('${item.id}')">
         <div class="history-item-header">
@@ -52,7 +87,7 @@ function renderHistory() {
           <span>${date}</span>
           <span>${item.snippet.length} chars</span>
         </div>
-        ${mins ? `<div class="history-resume">Resume at ${mins}</div>` : ''}
+        ${resumeHtml}
       </div>`;
   }).join('');
 }

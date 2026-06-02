@@ -299,19 +299,27 @@ function renderSpeakerTable(speakers, map) {
 
 // ── Emotion Analysis (single segment) ────────────────
 
-async function analyseEmotion(text) {
+async function analyseEmotion(text, prevText, nextText, genre) {
+  const ctx = [];
+  if (genre) ctx.push(`Genre/tone: ${genre}`);
+  if (prevText) ctx.push(`Previous passage: "${prevText.slice(0, 200)}"`);
+  ctx.push(`Current passage: "${text.slice(0, 600)}"`);
+  if (nextText) ctx.push(`Next passage: "${nextText.slice(0, 200)}"`);
+
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      max_tokens: 80,
+      max_tokens: 150,
       messages: [{
         role: 'user',
-        content: `Analyse the emotional tone of this passage. Reply with JSON only, no markdown:
-{"emotion": "<one word>", "instruction": "<TTS voice instruction, max 12 words>"}
+        content: `You are directing a voice actor recording an audiobook. Analyse the emotional tone of the current passage in context and write a performance instruction for text-to-speech.
 
-Text: ${text.slice(0, 600)}`
+${ctx.join('\n')}
+
+Reply with JSON only, no markdown:
+{"emotion": "<one word>", "instruction": "<1-2 sentence performance direction covering tone, pacing, and any words to emphasise>"}`
       }]
     })
   });
@@ -321,13 +329,14 @@ Text: ${text.slice(0, 600)}`
     const raw = data.choices[0].message.content.trim().replace(/```json|```/g, '');
     return JSON.parse(raw);
   } catch(e) {
-    return { emotion: 'neutral', instruction: 'read naturally and clearly' };
+    return { emotion: 'neutral', instruction: 'Read naturally and clearly.' };
   }
 }
 
 // ── Speaker Assignment (single segment) ──────────────
 
-async function assignSpeaker(text, speakerNames) {
+async function assignSpeaker(text, speakerNames, lastSpeaker) {
+  const carryHint = lastSpeaker ? `\nThe previous line was spoken by ${lastSpeaker}.` : '';
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
@@ -336,9 +345,7 @@ async function assignSpeaker(text, speakerNames) {
       max_tokens: 40,
       messages: [{
         role: 'user',
-        content: `Who is the primary speaker in this passage? Choose from: ${speakerNames}. If it is narration with no clear speaker, reply null. Reply with JSON only: {"speaker": "Name or null"}
-
-Text: ${text.slice(0, 400)}`
+        content: `Who is the primary speaker in this passage? Choose from: ${speakerNames}. If it is narration with no clear speaker, reply null.${carryHint}\n\nReply with JSON only: {"speaker": "Name or null"}\n\nText: ${text.slice(0, 400)}`
       }]
     })
   });
@@ -366,22 +373,23 @@ async function parseEmotion() {
   const segments = splitByGranularity(text, mode).map(s => typeof s === 'string' ? s : s.text);
 
   try {
-    const results = [];
-    for (let i = 0; i < segments.length; i++) {
-      if (content) content.innerHTML = `<div class="spinner-sm"></div> ${i+1}/${segments.length}`;
-      const parsed = await analyseEmotion(segments[i]);
+    let done = 0;
+    const genre = document.getElementById('genreToneInput')?.value.trim();
+    const results = await withConcurrency(segments, 5, async (seg, i) => {
+      const parsed = await analyseEmotion(seg, segments[i - 1], segments[i + 1], genre);
+      done++;
+      if (content) content.innerHTML = `<div class="spinner-sm"></div> ${done}/${segments.length}`;
 
-      // Determine voice for this segment (narrator mode only; voice mode handled by parseVoice)
       let segVoice = selectedVoice;
       const multiVoiceOn = document.getElementById('multiVoiceToggle')?.checked;
       if (multiVoiceOn && voiceMode === 'narrator') {
         const nv = document.getElementById('narratorVoice')?.value || selectedVoice;
         const dv = document.getElementById('dialogueVoice')?.value || selectedVoice;
-        segVoice = isDialogue(segments[i]) ? dv : nv;
+        segVoice = isDialogue(seg) ? dv : nv;
       }
 
-      results.push({ text: segments[i], emotion: parsed.emotion || 'neutral', instruction: parsed.instruction || 'read naturally', voice: segVoice, speaker: null });
-    }
+      return { text: seg, emotion: parsed.emotion || 'neutral', instruction: parsed.instruction || 'Read naturally.', voice: segVoice, speaker: null };
+    });
 
     parsedEmotionData = { segments, results };
     rebuildAndRender();
@@ -420,10 +428,14 @@ async function parseVoice() {
     content.innerHTML = '<div class="spinner-sm"></div> Assigning…';
     const speakerNames = Object.keys(speakerMap).join(', ');
 
+    let lastSpeaker = null;
+    let done = 0;
     const annotations = [];
     for (let i = 0; i < segments.length; i++) {
-      content.innerHTML = `<div class="spinner-sm"></div> ${i+1}/${segments.length}`;
-      const speaker = await assignSpeaker(segments[i], speakerNames);
+      const speaker = await assignSpeaker(segments[i], speakerNames, lastSpeaker);
+      done++;
+      if (content) content.innerHTML = `<div class="spinner-sm"></div> ${done}/${segments.length}`;
+      if (speaker) lastSpeaker = speaker;
       const voice = speaker ? speakerMap[speaker] : selectedVoice;
       annotations.push({ text: segments[i], speaker, voice });
     }
@@ -476,24 +488,26 @@ async function parseBoth() {
     if (emotionContent) emotionContent.innerHTML = `<div class="spinner-sm"></div> 0/${segments.length}`;
     if (voiceContent) voiceContent.innerHTML = `<div class="spinner-sm"></div> 0/${segments.length}`;
 
-    let emotionDone = 0, voiceDone = 0;
+    let lastSpeaker = null;
+    let done = 0;
+    const genre = document.getElementById('genreToneInput')?.value.trim();
 
-    await Promise.all(segments.map(async (seg, i) => {
+    for (let i = 0; i < segments.length; i++) {
+      const seg = segments[i];
       const [emotionParsed, speaker] = await Promise.all([
-        analyseEmotion(seg),
-        assignSpeaker(seg, speakerNames)
+        analyseEmotion(seg, segments[i - 1], segments[i + 1], genre),
+        assignSpeaker(seg, speakerNames, lastSpeaker)
       ]);
 
-      emotionDone++;
-      voiceDone++;
-      if (emotionContent) emotionContent.innerHTML = `<div class="spinner-sm"></div> ${emotionDone}/${segments.length}`;
-      if (voiceContent) voiceContent.innerHTML = `<div class="spinner-sm"></div> ${voiceDone}/${segments.length}`;
+      done++;
+      if (speaker) lastSpeaker = speaker;
+      if (emotionContent) emotionContent.innerHTML = `<div class="spinner-sm"></div> ${done}/${segments.length}`;
+      if (voiceContent) voiceContent.innerHTML = `<div class="spinner-sm"></div> ${done}/${segments.length}`;
 
-      let segVoice = speaker ? speakerMap[speaker] : selectedVoice;
-
-      emotionResults[i] = { text: seg, emotion: emotionParsed.emotion || 'neutral', instruction: emotionParsed.instruction || 'read naturally', voice: segVoice, speaker };
+      const segVoice = speaker ? speakerMap[speaker] : selectedVoice;
+      emotionResults[i] = { text: seg, emotion: emotionParsed.emotion || 'neutral', instruction: emotionParsed.instruction || 'Read naturally.', voice: segVoice, speaker };
       voiceAnnotations[i] = { text: seg, speaker, voice: segVoice };
-    }));
+    }
 
     parsedEmotionData = { segments, results: emotionResults };
     parsedVoiceData = { segments, annotations: voiceAnnotations };

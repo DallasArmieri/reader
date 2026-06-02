@@ -242,14 +242,14 @@ async function generateAudio() {
   if (chunks.length > 1) progressBox.className = 'progress-box visible';
 
   try {
-    const buffers = [];
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
-      const label = voicePlusEnabled && chunk.emotion ? `${chunk.emotion} (${i+1}/${chunks.length})` : `${i+1} of ${chunks.length}`;
-      document.getElementById('progressLabel').textContent = chunks.length > 1 ? `Generating ${label}…` : 'Generating audio…';
-      document.getElementById('progressFill').style.width = (i / chunks.length * 100) + '%';
-      buffers.push(await fetchChunk(chunk.text, chunk.instruction, chunk.voice));
-    }
+    let done = 0;
+    const buffers = await withConcurrency(chunks, 5, async (chunk) => {
+      const buf = await fetchChunk(chunk.text, chunk.instruction, chunk.voice);
+      done++;
+      document.getElementById('progressLabel').textContent = chunks.length > 1 ? `Generating… ${done}/${chunks.length}` : 'Generating audio…';
+      document.getElementById('progressFill').style.width = (done / chunks.length * 100) + '%';
+      return buf;
+    });
     document.getElementById('progressFill').style.width = '100%';
 
     const totalLen = buffers.reduce((s, b) => s + b.byteLength, 0);
@@ -282,6 +282,10 @@ async function generateAudio() {
     playerBox.className = 'player visible';
     progressBox.className = 'progress-box';
     audio.play();
+
+    audio.addEventListener('loadedmetadata', () => {
+      if (currentArticleId) saveDuration(currentArticleId, audio.duration);
+    }, { once: true });
 
     audio.ontimeupdate = () => {
       if (currentArticleId) savePosition(currentArticleId, Math.floor(audio.currentTime));

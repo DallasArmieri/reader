@@ -137,6 +137,12 @@
 
   <!-- HISTORY PANEL -->
   <div class="panel" id="panel-history">
+    <div class="history-search-row">
+      <span class="history-search-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input type="search" id="historySearch" placeholder="Search titles…" oninput="renderHistory()" />
+    </div>
     <div id="historyList"></div>
   </div>
 
@@ -173,6 +179,9 @@
       <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:8px;line-height:1.7;" id="granularityHint">
         Each line gets its own emotion analysis and TTS call.
       </div>
+      <div class="section-label" style="margin-top:16px;">Genre / Tone <span style="font-size:9px;font-weight:400;text-transform:none;letter-spacing:0;font-style:italic;opacity:0.7;">optional</span></div>
+      <input type="text" id="genreToneInput" placeholder="e.g. literary thriller, cozy mystery, horror…" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:13px;font-family:'DM Mono',monospace;color:var(--text);outline:none;" />
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted);margin-top:6px;line-height:1.7;">Calibrates emotion detection across the whole text.</div>
     </div>
 
     <div class="section">
