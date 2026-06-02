@@ -160,10 +160,10 @@ async function detectSpeakers(fullText) {
       max_tokens: 300,
       messages: [{
         role: 'user',
-        content: `Identify all distinct speakers in this text. Include "Narrator" for non-dialogue. For each speaker, guess their gender/personality from context.
+        content: `Identify all distinct character speakers in this text. Do not include a Narrator — only named or identifiable characters who speak dialogue. For each speaker, guess their gender/personality from context.
 
 Reply with JSON only, no markdown:
-{"speakers": [{"name": "Narrator", "hint": "calm authoritative male"}, {"name": "Character Name", "hint": "young energetic female"}]}
+{"speakers": [{"name": "Character Name", "hint": "young energetic female"}]}
 
 Text (first 2000 chars):
 ${fullText.slice(0, 2000)}`
@@ -188,7 +188,6 @@ function autoAssignVoices(speakers) {
     const isFemale = femaleHints.some(h => hint.includes(h));
     map[s.name] = isFemale ? femalePool[fi++ % femalePool.length] : malePool[mi++ % malePool.length];
   });
-  if (map['Narrator']) map['Narrator'] = 'onyx';
   return map;
 }
 
@@ -298,7 +297,8 @@ async function parseEmotion() {
       if (multiVoiceOn) {
         if (voiceMode === 'narrator') {
           const nv = document.getElementById('narratorVoice')?.value || selectedVoice;
-          segVoice = isDialogue(segments[i]) ? selectedVoice : nv;
+          const dv = document.getElementById('dialogueVoice')?.value || selectedVoice;
+          segVoice = isDialogue(segments[i]) ? dv : nv;
         } else if (voiceMode === 'voice') {
           const speakerNames = Object.keys(speakerMap).join(', ');
           const speakerRes = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -319,8 +319,8 @@ Text: ${segments[i].slice(0, 400)}`
             try {
               const sd = await speakerRes.json();
               const sp = JSON.parse(sd.choices[0].message.content.trim().replace(/```json|```/g,''));
-              const assignedSpeaker = sp.speaker || 'Narrator';
-              segVoice = speakerMap[assignedSpeaker] || selectedVoice;
+              const assignedSpeaker = speakerMap[sp.speaker] ? sp.speaker : null;
+              segVoice = assignedSpeaker ? speakerMap[assignedSpeaker] : selectedVoice;
               results.push({ text: segments[i], emotion: sp.emotion || 'neutral', instruction: sp.instruction || 'read naturally', voice: segVoice, speaker: assignedSpeaker });
               continue;
             } catch(e) {}
@@ -409,15 +409,15 @@ Text: ${segments[i].slice(0, 400)}`
           }]
         })
       });
-      let speaker = 'Narrator';
+      let speaker = null;
       if (res.ok) {
         try {
           const d = await res.json();
           const sp = JSON.parse(d.choices[0].message.content.trim().replace(/```json|```/g,''));
-          speaker = sp.speaker || 'Narrator';
+          speaker = speakerMap[sp.speaker] ? sp.speaker : null;
         } catch(e) {}
       }
-      const voice = speakerMap[speaker] || selectedVoice;
+      const voice = speaker ? speakerMap[speaker] : selectedVoice;
       voiceAnnotations.push({ text: segments[i], speaker, voice });
     }
 

@@ -230,8 +230,9 @@ async function generateAudio() {
     chunks = parsedEmotionChunks;
   } else if (multiVoiceOn && voiceMode === 'narrator') {
     const nv = document.getElementById('narratorVoice')?.value || selectedVoice;
+    const dv = document.getElementById('dialogueVoice')?.value || selectedVoice;
     const lines = text.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
-    chunks = lines.map(line => ({ text: line, instruction: null, voice: isDialogue(line) ? selectedVoice : nv }));
+    chunks = lines.map(line => ({ text: line, instruction: null, voice: isDialogue(line) ? dv : nv }));
   } else {
     chunks = splitIntoChunks(text, CHUNK_SIZE).map(t => ({ text: t, instruction: null, voice: selectedVoice }));
   }
