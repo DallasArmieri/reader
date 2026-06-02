@@ -301,3 +301,18 @@ function showError(msg) {
   box.textContent = msg;
   box.className = 'error-box visible';
 }
+
+// ── Parse Dispatchers ─────────────────────────────────
+function bothParsesActive() {
+  return document.getElementById('voicePlusToggle')?.checked &&
+         document.getElementById('multiVoiceToggle')?.checked &&
+         voiceMode === 'voice';
+}
+
+function handleParseEmotion() {
+  if (bothParsesActive()) { parseBoth(); } else { parseEmotion(); }
+}
+
+function handleParseVoice() {
+  if (bothParsesActive()) { parseBoth(); } else { parseVoice(); }
+}

@@ -1,6 +1,8 @@
 // ── Voice+ State ──────────────────────────────────────
 let voicePlusEnabled = false;
-let parsedEmotionChunks = null;
+let parsedEmotionChunks = null;  // final merged chunks used for generation
+let parsedEmotionData = null;    // { segments: [], results: [] } from parseEmotion
+let parsedVoiceData = null;      // { segments: [], annotations: [] } from parseVoice
 let voiceMode = 'narrator';
 let speakerMap = {};
 
@@ -46,11 +48,12 @@ function updateParseVoiceBtnVisibility() {
 
 function toggleVoicePlus(enabled) {
   voicePlusEnabled = enabled;
-  parsedEmotionChunks = null;
-  speakerMap = {};
   document.getElementById('parseSection').style.display = enabled ? 'block' : 'none';
   document.getElementById('parseShortcut').style.display = enabled ? 'flex' : 'none';
-  if (!enabled) clearParse();
+  if (!enabled) {
+    parsedEmotionData = null;
+    rebuildAndRender();
+  }
 }
 
 function toggleMultiVoiceSection(enabled) {
@@ -59,9 +62,9 @@ function toggleMultiVoiceSection(enabled) {
     document.getElementById('narratorModeUI').style.display = voiceMode === 'narrator' ? 'block' : 'none';
     document.getElementById('voiceModeUI').style.display = voiceMode === 'voice' ? 'block' : 'none';
   } else {
-    parsedEmotionChunks = null;
+    parsedVoiceData = null;
     speakerMap = {};
-    clearParse();
+    rebuildAndRender();
   }
   updateParseVoiceBtnVisibility();
 }
@@ -78,9 +81,9 @@ function setVoiceMode(mode) {
     const table = document.getElementById('speakerTable');
     if (table) { table.style.display = 'none'; table.innerHTML = ''; }
     speakerMap = {};
+    parsedVoiceData = null;
+    rebuildAndRender();
   }
-  parsedEmotionChunks = null;
-  clearParse();
   updateParseVoiceBtnVisibility();
 }
 
@@ -88,6 +91,9 @@ function setVoiceMode(mode) {
 
 function clearParse() {
   parsedEmotionChunks = null;
+  parsedEmotionData = null;
+  parsedVoiceData = null;
+  speakerMap = {};
   const av = document.getElementById('annotatedView');
   if (av) { av.style.display = 'none'; av.innerHTML = ''; }
   const ti = document.getElementById('textInput');
@@ -97,14 +103,94 @@ function clearParse() {
 }
 
 function onTextInput() {
-  const av = document.getElementById('annotatedView');
-  if (av && av.style.display !== 'none') {
-    av.style.display = 'none';
-    av.innerHTML = '';
-    document.getElementById('textInput').style.display = '';
+  // Only clear parse if text actually changed (user typed/pasted)
+  if (parsedEmotionData || parsedVoiceData) {
+    parsedEmotionData = null;
+    parsedVoiceData = null;
     parsedEmotionChunks = null;
+    const av = document.getElementById('annotatedView');
+    if (av) { av.style.display = 'none'; av.innerHTML = ''; }
+    document.getElementById('textInput').style.display = '';
   }
   updateCount();
+}
+
+// ── Merge & Rebuild ───────────────────────────────────
+
+// Merge emotion and voice parse results into parsedEmotionChunks and re-render
+function rebuildAndRender() {
+  const hasEmotion = !!parsedEmotionData;
+  const hasVoice = !!parsedVoiceData;
+
+  if (!hasEmotion && !hasVoice) {
+    parsedEmotionChunks = null;
+    const av = document.getElementById('annotatedView');
+    if (av) { av.style.display = 'none'; av.innerHTML = ''; }
+    document.getElementById('textInput').style.display = '';
+    return;
+  }
+
+  // Use whichever has segments as the base
+  const base = hasEmotion ? parsedEmotionData.results : parsedVoiceData.annotations.map(a => ({
+    text: a.text, emotion: null, instruction: null, voice: a.voice, speaker: a.speaker
+  }));
+
+  const merged = base.map((chunk, i) => {
+    const result = { ...chunk };
+    // Overlay voice data if available
+    if (hasVoice && parsedVoiceData.annotations[i]) {
+      result.voice = parsedVoiceData.annotations[i].voice;
+      result.speaker = parsedVoiceData.annotations[i].speaker;
+    }
+    // Overlay emotion data if available
+    if (hasEmotion && parsedEmotionData.results[i]) {
+      result.emotion = parsedEmotionData.results[i].emotion;
+      result.instruction = parsedEmotionData.results[i].instruction;
+    }
+    return result;
+  });
+
+  parsedEmotionChunks = merged;
+  renderMerged(merged, hasEmotion, hasVoice);
+}
+
+// ── Render ────────────────────────────────────────────
+
+function renderMerged(chunks, hasEmotion, hasVoice) {
+  const textarea = document.getElementById('textInput');
+  const av = document.getElementById('annotatedView');
+  textarea.style.display = 'none';
+  av.style.display = 'block';
+  av.innerHTML = `<div class="annotated-view">${
+    chunks.map(c => {
+      let pills = '';
+
+      // Emotion pill
+      if (hasEmotion && c.emotion) {
+        pills += `<span class="emotion-pill">✦ ${c.emotion.toUpperCase()}</span> `;
+      }
+
+      // Voice/speaker pill
+      if (hasVoice && voiceMode === 'voice') {
+        if (c.speaker) {
+          const color = VOICE_COLORS[c.voice] || '#8a877f';
+          const voiceName = VOICE_LABELS[c.voice] || c.voice;
+          pills += `<span class="emotion-pill" style="color:${color};border-color:${color}33;background:${color}11;">◆ ${c.speaker} <span style="opacity:0.6;font-size:9px;">· ${voiceName}</span></span>`;
+        }
+      } else if (voiceMode === 'narrator' && document.getElementById('multiVoiceToggle')?.checked) {
+        const isD = isDialogue(c.text);
+        pills += `<span style="font-family:'DM Mono',monospace;font-size:9px;color:${isD?'var(--accent)':'var(--text-muted)'};">${isD?'◆ SPEAKER':'○ NARRATOR'}</span>`;
+      }
+
+      return `
+      <div class="annotated-chunk">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">${pills}</div>
+        ${hasEmotion && c.instruction ? `<div class="emotion-instr">${c.instruction}</div>` : ''}
+        <div class="annotated-text">${c.text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
+      </div>`;
+    }).join('')
+  }</div>
+  <button class="clear-parse" onclick="clearParse()">× Clear &amp; edit text</button>`;
 }
 
 // ── Dialogue Detection ────────────────────────────────
@@ -202,63 +288,66 @@ function renderSpeakerTable(speakers, map) {
     speakers.map(s => {
       const voice = map[s.name] || 'alloy';
       const color = VOICE_COLORS[voice] || '#8a877f';
-      const isNarr = s.name === 'Narrator';
       return `<div class="speaker-row">
         <div class="speaker-dot" style="background:${color};"></div>
-        <div class="speaker-name${isNarr ? ' is-narrator' : ''}">${s.name}</div>
+        <div class="speaker-name">${s.name}</div>
         ${voiceSelectHTML(s.name, voice)}
       </div>`;
     }).join('')
   }</div>`;
 }
 
-// ── Render Annotated Views ────────────────────────────
+// ── Emotion Analysis (single segment) ────────────────
 
-function renderEmotionPreview(chunks) {
-  const textarea = document.getElementById('textInput');
-  const av = document.getElementById('annotatedView');
-  textarea.style.display = 'none';
-  av.style.display = 'block';
-  av.innerHTML = `<div class="annotated-view">${
-    chunks.map(c => {
-      let tag = '';
-      if (voicePlusEnabled && voiceMode === 'voice' && c.speaker) {
-        const color = VOICE_COLORS[c.voice] || '#8a877f';
-        tag = `<span style="font-family:'DM Mono',monospace;font-size:9px;color:${color};margin-left:6px;">◆ ${c.speaker}</span>`;
-      } else if (voicePlusEnabled && voiceMode === 'narrator') {
-        const isD = isDialogue(c.text);
-        tag = `<span style="font-family:'DM Mono',monospace;font-size:9px;color:${isD?'var(--accent)':'var(--text-muted)'};margin-left:6px;">${isD?'◆ DIALOGUE':'○ NARRATOR'}</span>`;
-      }
-      return `
-      <div class="annotated-chunk">
-        <div class="emotion-pill">✦ ${c.emotion.toUpperCase()}${tag}</div>
-        <div class="emotion-instr">${c.instruction}</div>
-        <div class="annotated-text">${c.text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
-      </div>`;
-    }).join('')
-  }</div>
-  <button class="clear-parse" onclick="clearParse()">× Clear &amp; edit text</button>`;
+async function analyseEmotion(text) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      max_tokens: 80,
+      messages: [{
+        role: 'user',
+        content: `Analyse the emotional tone of this passage. Reply with JSON only, no markdown:
+{"emotion": "<one word>", "instruction": "<TTS voice instruction, max 12 words>"}
+
+Text: ${text.slice(0, 600)}`
+      }]
+    })
+  });
+  if (!res.ok) throw new Error('API error ' + res.status);
+  const data = await res.json();
+  try {
+    const raw = data.choices[0].message.content.trim().replace(/```json|```/g, '');
+    return JSON.parse(raw);
+  } catch(e) {
+    return { emotion: 'neutral', instruction: 'read naturally and clearly' };
+  }
 }
 
-function renderVoiceAnnotation(segments) {
-  const textarea = document.getElementById('textInput');
-  const av = document.getElementById('annotatedView');
-  textarea.style.display = 'none';
-  av.style.display = 'block';
-  av.innerHTML = `<div class="annotated-view">${
-    segments.map(s => {
-      const color = VOICE_COLORS[s.voice] || '#8a877f';
-      const voiceName = VOICE_LABELS[s.voice] || s.voice;
-      return `
-      <div class="annotated-chunk">
-        <div class="emotion-pill" style="color:${color};border-color:${color}33;background:${color}11;">
-          ◆ ${s.speaker} <span style="opacity:0.6;font-size:9px;">· ${voiceName}</span>
-        </div>
-        <div class="annotated-text">${s.text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
-      </div>`;
-    }).join('')
-  }</div>
-  <button class="clear-parse" onclick="clearParse()">× Clear &amp; edit text</button>`;
+// ── Speaker Assignment (single segment) ──────────────
+
+async function assignSpeaker(text, speakerNames) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      max_tokens: 40,
+      messages: [{
+        role: 'user',
+        content: `Who is the primary speaker in this passage? Choose from: ${speakerNames}. If it is narration with no clear speaker, reply null. Reply with JSON only: {"speaker": "Name or null"}
+
+Text: ${text.slice(0, 400)}`
+      }]
+    })
+  });
+  if (!res.ok) return null;
+  try {
+    const d = await res.json();
+    const sp = JSON.parse(d.choices[0].message.content.trim().replace(/```json|```/g,''));
+    return speakerMap[sp.speaker] ? sp.speaker : null;
+  } catch(e) { return null; }
 }
 
 // ── Parse Emotion ─────────────────────────────────────
@@ -271,93 +360,31 @@ async function parseEmotion() {
   const btn = document.getElementById('parseShortcutBtn');
   const content = document.getElementById('parseShortcutContent');
   if (btn) btn.disabled = true;
-  parsedEmotionChunks = null;
+  parsedEmotionData = null;
 
   const mode = getGranularity();
-  const rawSegments = splitByGranularity(text, mode);
-  const segments = rawSegments.map(s => typeof s === 'string' ? s : s.text);
-  const multiVoiceOn = document.getElementById('multiVoiceToggle')?.checked;
+  const segments = splitByGranularity(text, mode).map(s => typeof s === 'string' ? s : s.text);
 
   try {
-    // Speaker detection first if in voice mode
-    if (multiVoiceOn && voiceMode === 'voice') {
-      if (content) content.innerHTML = `<div class="spinner-sm"></div> Detecting speakers…`;
-      const speakers = await detectSpeakers(text);
-      const autoMap = autoAssignVoices(speakers);
-      speakerMap = { ...autoMap, ...speakerMap };
-      renderSpeakerTable(speakers, speakerMap);
-    }
-
     const results = [];
     for (let i = 0; i < segments.length; i++) {
       if (content) content.innerHTML = `<div class="spinner-sm"></div> ${i+1}/${segments.length}`;
+      const parsed = await analyseEmotion(segments[i]);
 
-      // Determine voice
+      // Determine voice for this segment (narrator mode only; voice mode handled by parseVoice)
       let segVoice = selectedVoice;
-      if (multiVoiceOn) {
-        if (voiceMode === 'narrator') {
-          const nv = document.getElementById('narratorVoice')?.value || selectedVoice;
-          const dv = document.getElementById('dialogueVoice')?.value || selectedVoice;
-          segVoice = isDialogue(segments[i]) ? dv : nv;
-        } else if (voiceMode === 'voice') {
-          const speakerNames = Object.keys(speakerMap).join(', ');
-          const speakerRes = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              model: 'gpt-4o-mini',
-              max_tokens: 60,
-              messages: [{
-                role: 'user',
-                content: `Who is the primary speaker in this passage? Choose from: ${speakerNames}. Reply with JSON only: {"speaker": "Name", "emotion": "<one word>", "instruction": "<TTS voice instruction max 10 words>"}
-
-Text: ${segments[i].slice(0, 400)}`
-              }]
-            })
-          });
-          if (speakerRes.ok) {
-            try {
-              const sd = await speakerRes.json();
-              const sp = JSON.parse(sd.choices[0].message.content.trim().replace(/```json|```/g,''));
-              const assignedSpeaker = speakerMap[sp.speaker] ? sp.speaker : null;
-              segVoice = assignedSpeaker ? speakerMap[assignedSpeaker] : selectedVoice;
-              results.push({ text: segments[i], emotion: sp.emotion || 'neutral', instruction: sp.instruction || 'read naturally', voice: segVoice, speaker: assignedSpeaker });
-              continue;
-            } catch(e) {}
-          }
-        }
+      const multiVoiceOn = document.getElementById('multiVoiceToggle')?.checked;
+      if (multiVoiceOn && voiceMode === 'narrator') {
+        const nv = document.getElementById('narratorVoice')?.value || selectedVoice;
+        const dv = document.getElementById('dialogueVoice')?.value || selectedVoice;
+        segVoice = isDialogue(segments[i]) ? dv : nv;
       }
 
-      // Standard emotion analysis
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          max_tokens: 80,
-          messages: [{
-            role: 'user',
-            content: `Analyse the emotional tone of this passage. Reply with JSON only, no markdown:
-{"emotion": "<one word>", "instruction": "<TTS voice instruction, max 12 words>"}
-
-Text: ${segments[i].slice(0, 600)}`
-          }]
-        })
-      });
-      if (!res.ok) throw new Error('API error ' + res.status);
-      const data = await res.json();
-      let parsed;
-      try {
-        const raw = data.choices[0].message.content.trim().replace(/```json|```/g, '');
-        parsed = JSON.parse(raw);
-      } catch(e) {
-        parsed = { emotion: 'neutral', instruction: 'read naturally and clearly' };
-      }
       results.push({ text: segments[i], emotion: parsed.emotion || 'neutral', instruction: parsed.instruction || 'read naturally', voice: segVoice, speaker: null });
     }
 
-    parsedEmotionChunks = results;
-    renderEmotionPreview(results);
+    parsedEmotionData = { segments, results };
+    rebuildAndRender();
 
   } catch(err) {
     alert('Parse failed: ' + err.message);
@@ -378,7 +405,11 @@ async function parseVoice() {
   const content = document.getElementById('parseVoiceBtnContent');
   btn.disabled = true;
   content.innerHTML = '<div class="spinner-sm"></div> Detecting…';
+  parsedVoiceData = null;
   speakerMap = {};
+
+  const mode = getGranularity();
+  const segments = splitByGranularity(text, mode).map(s => typeof s === 'string' ? s : s.text);
 
   try {
     const speakers = await detectSpeakers(text);
@@ -387,47 +418,93 @@ async function parseVoice() {
     renderSpeakerTable(speakers, speakerMap);
 
     content.innerHTML = '<div class="spinner-sm"></div> Assigning…';
-    const mode = getGranularity();
-    const rawSegments = splitByGranularity(text, mode);
-    const segments = rawSegments.map(s => typeof s === 'string' ? s : s.text);
     const speakerNames = Object.keys(speakerMap).join(', ');
 
-    const voiceAnnotations = [];
+    const annotations = [];
     for (let i = 0; i < segments.length; i++) {
       content.innerHTML = `<div class="spinner-sm"></div> ${i+1}/${segments.length}`;
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          max_tokens: 40,
-          messages: [{
-            role: 'user',
-            content: `Who is the primary speaker in this passage? Choose from: ${speakerNames}. Reply with JSON only: {"speaker": "Name"}
-
-Text: ${segments[i].slice(0, 400)}`
-          }]
-        })
-      });
-      let speaker = null;
-      if (res.ok) {
-        try {
-          const d = await res.json();
-          const sp = JSON.parse(d.choices[0].message.content.trim().replace(/```json|```/g,''));
-          speaker = speakerMap[sp.speaker] ? sp.speaker : null;
-        } catch(e) {}
-      }
+      const speaker = await assignSpeaker(segments[i], speakerNames);
       const voice = speaker ? speakerMap[speaker] : selectedVoice;
-      voiceAnnotations.push({ text: segments[i], speaker, voice });
+      annotations.push({ text: segments[i], speaker, voice });
     }
 
-    parsedEmotionChunks = voiceAnnotations.map(a => ({ text: a.text, emotion: null, instruction: null, voice: a.voice, speaker: a.speaker }));
-    renderVoiceAnnotation(voiceAnnotations);
+    parsedVoiceData = { segments, annotations };
+    rebuildAndRender();
 
   } catch(err) {
     alert('Voice parse failed: ' + err.message);
   } finally {
     btn.disabled = false;
     content.textContent = '◆ Parse Voice';
+  }
+}
+
+// ── Parse Both Simultaneously ─────────────────────────
+
+async function parseBoth() {
+  const text = document.getElementById('textInput').value.trim();
+  if (!text) { alert('Paste some text on the Read tab first.'); return; }
+  if (!OPENAI_KEY) { alert('No API key — add it in Settings.'); return; }
+
+  const emotionBtn = document.getElementById('parseShortcutBtn');
+  const emotionContent = document.getElementById('parseShortcutContent');
+  const voiceBtn = document.getElementById('parseVoiceBtn');
+  const voiceContent = document.getElementById('parseVoiceBtnContent');
+
+  if (emotionBtn) emotionBtn.disabled = true;
+  if (voiceBtn) voiceBtn.disabled = true;
+  parsedEmotionData = null;
+  parsedVoiceData = null;
+  speakerMap = {};
+
+  const mode = getGranularity();
+  const segments = splitByGranularity(text, mode).map(s => typeof s === 'string' ? s : s.text);
+
+  try {
+    // Detect speakers first (needed for voice assignment)
+    if (voiceContent) voiceContent.innerHTML = '<div class="spinner-sm"></div> Detecting…';
+    const speakers = await detectSpeakers(text);
+    const autoMap = autoAssignVoices(speakers);
+    speakerMap = { ...autoMap };
+    renderSpeakerTable(speakers, speakerMap);
+    const speakerNames = Object.keys(speakerMap).join(', ');
+
+    // Run emotion and voice assignment in parallel per segment
+    const emotionResults = [];
+    const voiceAnnotations = [];
+
+    if (emotionContent) emotionContent.innerHTML = `<div class="spinner-sm"></div> 0/${segments.length}`;
+    if (voiceContent) voiceContent.innerHTML = `<div class="spinner-sm"></div> 0/${segments.length}`;
+
+    let emotionDone = 0, voiceDone = 0;
+
+    await Promise.all(segments.map(async (seg, i) => {
+      const [emotionParsed, speaker] = await Promise.all([
+        analyseEmotion(seg),
+        assignSpeaker(seg, speakerNames)
+      ]);
+
+      emotionDone++;
+      voiceDone++;
+      if (emotionContent) emotionContent.innerHTML = `<div class="spinner-sm"></div> ${emotionDone}/${segments.length}`;
+      if (voiceContent) voiceContent.innerHTML = `<div class="spinner-sm"></div> ${voiceDone}/${segments.length}`;
+
+      let segVoice = speaker ? speakerMap[speaker] : selectedVoice;
+
+      emotionResults[i] = { text: seg, emotion: emotionParsed.emotion || 'neutral', instruction: emotionParsed.instruction || 'read naturally', voice: segVoice, speaker };
+      voiceAnnotations[i] = { text: seg, speaker, voice: segVoice };
+    }));
+
+    parsedEmotionData = { segments, results: emotionResults };
+    parsedVoiceData = { segments, annotations: voiceAnnotations };
+    rebuildAndRender();
+
+  } catch(err) {
+    alert('Parse failed: ' + err.message);
+  } finally {
+    if (emotionBtn) emotionBtn.disabled = false;
+    if (voiceBtn) voiceBtn.disabled = false;
+    if (emotionContent) emotionContent.textContent = '✦ Parse Emotion';
+    if (voiceContent) voiceContent.textContent = '◆ Parse Voice';
   }
 }
