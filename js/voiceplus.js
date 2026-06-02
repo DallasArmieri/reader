@@ -150,6 +150,12 @@ function rebuildAndRender() {
     return result;
   });
 
+  const genre = document.getElementById('genreToneInput')?.value.trim();
+  const narratorDefault = genre ? `Normal pace. Match the ${genre} tone.` : 'Normal pace. neutral.';
+  merged.forEach(chunk => {
+    if (!chunk.instruction) chunk.instruction = narratorDefault;
+  });
+
   parsedEmotionChunks = merged;
   renderMerged(merged, hasEmotion, hasVoice);
 }
@@ -238,21 +244,33 @@ function splitByGranularity(text, mode) {
 // ── Speaker Detection ─────────────────────────────────
 
 async function detectSpeakers(fullText) {
+  let sample;
+  if (fullText.length <= 2100) {
+    sample = fullText;
+  } else {
+    const w = 700;
+    const mid = Math.floor(fullText.length / 2);
+    const start  = fullText.slice(0, w);
+    const middle = fullText.slice(mid - Math.floor(w / 2), mid + Math.floor(w / 2));
+    const end    = fullText.slice(-w);
+    sample = `[Start]\n${start}\n\n[Middle]\n${middle}\n\n[End]\n${end}`;
+  }
+
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      max_tokens: 300,
+      max_tokens: 150,
       messages: [{
         role: 'user',
-        content: `Identify all distinct character speakers in this text. Do not include a Narrator — only named or identifiable characters who speak dialogue. For each speaker, guess their gender/personality from context.
+        content: `Identify all distinct character speakers across these samples of a text. Do not include a Narrator — only named or identifiable characters who speak dialogue. For each speaker, guess their gender/personality from context.
 
 Reply with JSON only, no markdown:
 {"speakers": [{"name": "Character Name", "hint": "young energetic female"}]}
 
-Text (first 2000 chars):
-${fullText.slice(0, 2000)}`
+Text samples:
+${sample}`
       }]
     })
   });
@@ -311,15 +329,15 @@ async function analyseEmotion(text, prevText, nextText, genre) {
     headers: { 'Authorization': 'Bearer ' + OPENAI_KEY, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
-      max_tokens: 150,
+      max_tokens: 60,
       messages: [{
         role: 'user',
-        content: `You are directing a voice actor recording an audiobook. Analyse the emotional tone of the current passage in context and write a performance instruction for text-to-speech.
+        content: `You are directing a voice actor recording an audiobook. Analyse the emotional tone of the current passage and write a concise TTS performance instruction.
 
 ${ctx.join('\n')}
 
 Reply with JSON only, no markdown:
-{"emotion": "<one word>", "instruction": "<1-2 sentence performance direction covering tone, pacing, and any words to emphasise>"}`
+{"emotion": "<one word>", "instruction": "<pace: slow|normal|fast>. <tone: one word>. <Emphasize: 'word'> (only if one word clearly needs stress, otherwise omit)"}`
       }]
     })
   });
