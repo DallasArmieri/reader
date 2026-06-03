@@ -90,7 +90,7 @@ function selectModel(el, model) {
 function updateSpeed(val) {
   playbackSpeed = parseFloat(val);
   const display = playbackSpeed % 1 === 0 ? playbackSpeed.toFixed(1) : playbackSpeed.toFixed(2).replace(/0+$/, '');
-  document.getElementById('speedDisplayRead').textContent = display + '×';
+  document.getElementById('speedBtnRead').textContent = display + '×';
   updateCount();
   saveSettings();
 }
@@ -100,10 +100,24 @@ function updateSpeedRead(val) { updateSpeed(val); }
 function updatePlaybackSpeed(val) {
   const speed = parseFloat(val);
   const display = speed % 1 === 0 ? speed.toFixed(1) : speed.toFixed(2).replace(/0+$/, '');
-  document.getElementById('playbackDisplay').textContent = display + '×';
+  document.getElementById('speedBtnPlayback').textContent = display + '×';
   const audio = document.getElementById('audioPlayer');
   if (audio) audio.playbackRate = speed;
 }
+
+function toggleSpeedPopup(which) {
+  const popup = document.getElementById(which === 'read' ? 'speedPopupRead' : 'speedPopupPlayback');
+  const other = document.getElementById(which === 'read' ? 'speedPopupPlayback' : 'speedPopupRead');
+  if (other) other.classList.remove('open');
+  if (popup) popup.classList.toggle('open');
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.speed-btn-wrap')) {
+    document.getElementById('speedPopupRead')?.classList.remove('open');
+    document.getElementById('speedPopupPlayback')?.classList.remove('open');
+  }
+});
 
 function skipAudio(seconds) {
   const audio = document.getElementById('audioPlayer');
@@ -335,7 +349,9 @@ async function generateAudio() {
     audio.src = currentAudioUrl;
     audio.playbackRate = playbackSpeed;
     document.getElementById('playerTitle').textContent = title;
-    document.getElementById('downloadLink').href = currentAudioUrl;
+    const dl = document.getElementById('downloadLink');
+    dl.download = title.replace(/[^\w\s-]/g, '').trim().slice(0, 60) + '.mp3';
+    dl.href = currentAudioUrl;
     playerBox.className = 'player visible';
     progressBox.className = 'progress-box';
     audio.play();

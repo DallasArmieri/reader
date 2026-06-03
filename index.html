@@ -83,18 +83,17 @@
 
     <div class="section">
       <div class="section-label">Generation Speed</div>
-      <div class="speed-container">
-        <div class="speed-header">
-          <span>Baked in at generation</span>
-          <span class="speed-value" id="speedDisplayRead">1.0×</span>
-        </div>
-        <input type="range" id="speedSliderRead" min="0.25" max="4.0" step="0.05" value="1.0" oninput="updateSpeedRead(this.value)">
-        <div class="speed-ticks">
-          <span class="speed-tick">0.25×</span>
-          <span class="speed-tick">1.0×</span>
-          <span class="speed-tick">2.0×</span>
-          <span class="speed-tick">3.0×</span>
-          <span class="speed-tick">4.0×</span>
+      <div class="speed-btn-wrap">
+        <button class="speed-btn" id="speedBtnRead" onclick="toggleSpeedPopup('read')">1.0×</button>
+        <div class="speed-popup" id="speedPopupRead">
+          <input type="range" id="speedSliderRead" min="0.25" max="4.0" step="0.05" value="1.0" oninput="updateSpeedRead(this.value)">
+          <div class="speed-ticks">
+            <span class="speed-tick">0.25×</span>
+            <span class="speed-tick">1.0×</span>
+            <span class="speed-tick">2.0×</span>
+            <span class="speed-tick">3.0×</span>
+            <span class="speed-tick">4.0×</span>
+          </div>
         </div>
       </div>
     </div>
@@ -128,21 +127,20 @@
         <button class="play-pause-btn" id="playPauseBtn" onclick="togglePlayPause()">▶</button>
         <button class="skip-btn" onclick="skipAudio(15)">15s →</button>
       </div>
-      <div class="speed-container" style="margin-top:16px;">
-        <div class="speed-header">
-          <span>Playback speed</span>
-          <span class="speed-value" id="playbackDisplay">1.0×</span>
-        </div>
-        <input type="range" id="playbackSlider" min="0.5" max="5.0" step="0.05" value="1.0" oninput="updatePlaybackSpeed(this.value)">
-        <div class="speed-ticks">
-          <span class="speed-tick">0.5×</span>
-          <span class="speed-tick">1.0×</span>
-          <span class="speed-tick">2.0×</span>
-          <span class="speed-tick">3.5×</span>
-          <span class="speed-tick">5.0×</span>
+      <div class="speed-btn-wrap" style="margin-top:14px;">
+        <button class="speed-btn" id="speedBtnPlayback" onclick="toggleSpeedPopup('playback')">1.0×</button>
+        <div class="speed-popup" id="speedPopupPlayback">
+          <input type="range" id="playbackSlider" min="0.5" max="5.0" step="0.05" value="1.0" oninput="updatePlaybackSpeed(this.value)">
+          <div class="speed-ticks">
+            <span class="speed-tick">0.5×</span>
+            <span class="speed-tick">1.0×</span>
+            <span class="speed-tick">2.0×</span>
+            <span class="speed-tick">3.5×</span>
+            <span class="speed-tick">5.0×</span>
+          </div>
         </div>
       </div>
-      <a class="download-link" id="downloadLink" href="#" download="audio.mp3">↓ Save MP3</a>
+      <a class="download-link" id="downloadLink" href="#" download="">↓ Save MP3</a>
     </div>
 
     <div class="footer-note">OpenAI TTS · pay-as-you-go · no monthly fee<br><span id="writeTime"></span></div>

@@ -122,7 +122,9 @@ function loadFromHistory(id) {
       audio.src = currentAudioUrl;
       audio.playbackRate = playbackSpeed;
       document.getElementById('playerTitle').textContent = item.title;
-      document.getElementById('downloadLink').href = currentAudioUrl;
+      const dl = document.getElementById('downloadLink');
+      dl.download = item.title.replace(/[^\w\s-]/g, '').trim().slice(0, 60) + '.mp3';
+      dl.href = currentAudioUrl;
       document.getElementById('playerBox').className = 'player visible';
 
       audio.addEventListener('loadedmetadata', () => {
@@ -178,7 +180,7 @@ function loadSettings() {
       const slider = document.getElementById('speedSliderRead');
       if (slider) slider.value = s.speed;
       const display = playbackSpeed % 1 === 0 ? playbackSpeed.toFixed(1) : playbackSpeed.toFixed(2).replace(/0+$/, '');
-      const el = document.getElementById('speedDisplayRead');
+      const el = document.getElementById('speedBtnRead');
       if (el) el.textContent = display + '×';
     }
 
