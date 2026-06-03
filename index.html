@@ -49,6 +49,19 @@
         <option value="coral">Coral — Friendly Female</option>
         <option value="sage">Sage — Calm Male</option>
       </select>
+      <div class="speed-btn-wrap" style="flex-shrink:0;">
+        <button class="speed-btn" id="speedBtnRead" onclick="toggleSpeedPopup('read')">1.0×</button>
+        <div class="speed-popup speed-popup-right" id="speedPopupRead">
+          <input type="range" id="speedSliderRead" min="0.25" max="4.0" step="0.05" value="1.0" oninput="updateSpeedRead(this.value)">
+          <div class="speed-ticks">
+            <span class="speed-tick">0.25×</span>
+            <span class="speed-tick">1.0×</span>
+            <span class="speed-tick">2.0×</span>
+            <span class="speed-tick">3.0×</span>
+            <span class="speed-tick">4.0×</span>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="url-input-row" id="urlInputRow" style="display:none;">
       <input type="url" id="urlInput" placeholder="https://example.com/article" />
@@ -81,22 +94,6 @@
       <div class="read-time" id="readTime"></div>
     </div>
 
-    <div class="section">
-      <div class="section-label">Generation Speed</div>
-      <div class="speed-btn-wrap">
-        <button class="speed-btn" id="speedBtnRead" onclick="toggleSpeedPopup('read')">1.0×</button>
-        <div class="speed-popup" id="speedPopupRead">
-          <input type="range" id="speedSliderRead" min="0.25" max="4.0" step="0.05" value="1.0" oninput="updateSpeedRead(this.value)">
-          <div class="speed-ticks">
-            <span class="speed-tick">0.25×</span>
-            <span class="speed-tick">1.0×</span>
-            <span class="speed-tick">2.0×</span>
-            <span class="speed-tick">3.0×</span>
-            <span class="speed-tick">4.0×</span>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <div class="error-box" id="errorBox"></div>
 

@@ -64,6 +64,7 @@ textarea::placeholder { color: var(--text-muted); font-style: italic; }
 .speed-btn:hover { border-color: var(--accent-dim); background: var(--surface2); }
 .speed-popup { display: none; position: absolute; left: 0; top: calc(100% + 6px); width: 100%; min-width: 220px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; z-index: 20; }
 .speed-popup.open { display: block; }
+.speed-popup-right { left: auto; right: 0; }
 input[type=range] { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: var(--surface2); border-radius: 2px; outline: none; cursor: pointer; }
 input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); box-shadow: 0 0 0 1px var(--accent-dim); }
 input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); }

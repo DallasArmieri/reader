@@ -90,6 +90,14 @@ function setVoiceMode(mode) {
   saveSettings();
 }
 
+function saveParseToHistory(text) {
+  const title = document.getElementById('textInput').dataset.title || text.slice(0, 60) + (text.length > 60 ? '…' : '');
+  const id = 'art_' + Date.now();
+  currentArticleId = id;
+  addToHistory(id, title, text);
+  localStorage.setItem('reader_text_' + id, text);
+}
+
 // ── Clear & Text Input ────────────────────────────────
 
 function clearParse() {
@@ -99,10 +107,6 @@ function clearParse() {
   speakerMap = {};
   const av = document.getElementById('annotatedView');
   if (av) { av.style.display = 'none'; av.innerHTML = ''; }
-  const ti = document.getElementById('textInput');
-  if (ti) ti.style.display = '';
-  const ep = document.getElementById('emotionPreview');
-  if (ep) { ep.style.display = 'none'; ep.innerHTML = ''; }
 }
 
 function onTextInput() {
@@ -113,7 +117,6 @@ function onTextInput() {
     parsedEmotionChunks = null;
     const av = document.getElementById('annotatedView');
     if (av) { av.style.display = 'none'; av.innerHTML = ''; }
-    document.getElementById('textInput').style.display = '';
   }
   updateCount();
 }
@@ -129,7 +132,6 @@ function rebuildAndRender() {
     parsedEmotionChunks = null;
     const av = document.getElementById('annotatedView');
     if (av) { av.style.display = 'none'; av.innerHTML = ''; }
-    document.getElementById('textInput').style.display = '';
     return;
   }
 
@@ -166,9 +168,7 @@ function rebuildAndRender() {
 // ── Render ────────────────────────────────────────────
 
 function renderMerged(chunks, hasEmotion, hasVoice) {
-  const textarea = document.getElementById('textInput');
   const av = document.getElementById('annotatedView');
-  textarea.style.display = 'none';
   av.style.display = 'block';
   av.innerHTML = `<div class="annotated-view">${
     chunks.map(c => {
@@ -199,7 +199,7 @@ function renderMerged(chunks, hasEmotion, hasVoice) {
       </div>`;
     }).join('')
   }</div>
-  <button class="clear-parse" onclick="clearParse()">× Clear &amp; edit text</button>`;
+  <button class="clear-parse" onclick="clearParse()">× Clear parse</button>`;
 }
 
 // ── Dialogue Detection ────────────────────────────────
@@ -414,6 +414,7 @@ async function parseEmotion() {
 
     parsedEmotionData = { segments, results };
     rebuildAndRender();
+    saveParseToHistory(text);
 
   } catch(err) {
     alert('Parse failed: ' + err.message);
@@ -463,6 +464,7 @@ async function parseVoice() {
 
     parsedVoiceData = { segments, annotations };
     rebuildAndRender();
+    saveParseToHistory(text);
 
   } catch(err) {
     alert('Voice parse failed: ' + err.message);
@@ -533,6 +535,7 @@ async function parseBoth() {
     parsedEmotionData = { segments, results: emotionResults };
     parsedVoiceData = { segments, annotations: voiceAnnotations };
     rebuildAndRender();
+    saveParseToHistory(text);
 
   } catch(err) {
     alert('Parse failed: ' + err.message);

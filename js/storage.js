@@ -97,6 +97,8 @@ function loadFromHistory(id) {
   const item = history.find(h => h.id === id);
   if (!item) return;
 
+  clearParse();
+
   const storedAudio = localStorage.getItem('reader_audio_' + id);
   const storedText = localStorage.getItem('reader_text_' + id);
 
