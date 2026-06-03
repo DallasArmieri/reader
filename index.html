@@ -86,7 +86,10 @@
         </div>
       </div>
       <textarea id="textInput" placeholder="Paste your article or any text here…" oninput="onTextInput()"></textarea>
-      <div id="annotatedView" style="display:none;"></div>
+      <div id="parseStatus" class="parse-status-row" style="display:none;">
+        <span class="parse-status-label" id="parseStatusLabel">✦ Parsed</span>
+        <button class="clear-parse" onclick="clearParse()">× clear</button>
+      </div>
       <div class="char-row">
         <span id="charCount">0 characters</span>
         <span id="costEst">~$0.000</span>

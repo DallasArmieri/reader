@@ -218,7 +218,8 @@ function setupMediaSession(title) {
 
 // ── Char count & read time ────────────────────────────
 function updateCount() {
-  const text = document.getElementById('textInput').value;
+  const raw = document.getElementById('textInput').value;
+  const text = hasAnnotations(raw) ? stripAnnotations(raw) : raw;
   const len = text.length;
   document.getElementById('charCount').textContent = len.toLocaleString() + ' characters';
   const rate = selectedModel === 'tts-1-hd' ? 0.030 : 0.015;
@@ -284,7 +285,8 @@ async function fetchChunk(text, voiceInstruction, voiceOverride) {
 // ── Generate ──────────────────────────────────────────
 async function generateAudio() {
   const text = document.getElementById('textInput').value.trim();
-  const title = document.getElementById('textInput').dataset.title || text.slice(0, 60) + (text.length > 60 ? '…' : '');
+  const rawText = hasAnnotations(text) ? stripAnnotations(text) : text;
+  const title = document.getElementById('textInput').dataset.title || rawText.slice(0, 60) + (rawText.length > 60 ? '…' : '');
   const btn = document.getElementById('generateBtn');
   const errorBox = document.getElementById('errorBox');
   const playerBox = document.getElementById('playerBox');
@@ -295,10 +297,10 @@ async function generateAudio() {
   progressBox.className = 'progress-box';
 
   if (!OPENAI_KEY) { showError('No API key — go to Settings and add your OpenAI key.'); return; }
-  if (!text) { showError('Please paste some text first.'); return; }
+  if (!rawText) { showError('Please paste some text first.'); return; }
 
   const rate = selectedModel === 'tts-1-hd' ? 0.030 : 0.015;
-  const estimatedCost = text.length / 1000 * rate;
+  const estimatedCost = rawText.length / 1000 * rate;
   if (estimatedCost > 0.10 && !confirm(`Estimated cost: $${estimatedCost.toFixed(3)}. Generate audio?`)) return;
 
   const multiVoiceOn = document.getElementById('multiVoiceToggle')?.checked;
@@ -307,13 +309,15 @@ async function generateAudio() {
   let chunks;
   if (parsedEmotionChunks) {
     chunks = parsedEmotionChunks;
+  } else if (hasAnnotations(text)) {
+    chunks = parseAnnotationsFromText(text) || splitIntoChunks(rawText, CHUNK_SIZE).map(t => ({ text: t, instruction: null, voice: selectedVoice }));
   } else if (multiVoiceOn && voiceMode === 'narrator') {
     const nv = document.getElementById('narratorVoice')?.value || selectedVoice;
     const dv = document.getElementById('dialogueVoice')?.value || selectedVoice;
-    const lines = text.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
+    const lines = rawText.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
     chunks = lines.map(line => ({ text: line, instruction: null, voice: isDialogue(line) ? dv : nv }));
   } else {
-    chunks = splitIntoChunks(text, CHUNK_SIZE).map(t => ({ text: t, instruction: null, voice: selectedVoice }));
+    chunks = splitIntoChunks(rawText, CHUNK_SIZE).map(t => ({ text: t, instruction: null, voice: selectedVoice }));
   }
 
   btn.disabled = true;
@@ -342,7 +346,7 @@ async function generateAudio() {
 
     const id = 'art_' + Date.now();
     currentArticleId = id;
-    addToHistory(id, title, text);
+    addToHistory(id, title, rawText);
     localStorage.setItem('reader_text_' + id, text);
 
     if (totalLen < 4 * 1024 * 1024) {

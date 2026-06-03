@@ -90,12 +90,53 @@ function setVoiceMode(mode) {
   saveSettings();
 }
 
-function saveParseToHistory(text) {
-  const title = document.getElementById('textInput').dataset.title || text.slice(0, 60) + (text.length > 60 ? '…' : '');
-  const id = 'art_' + Date.now();
-  currentArticleId = id;
-  addToHistory(id, title, text);
-  localStorage.setItem('reader_text_' + id, text);
+// ── Annotation helpers ───────────────────────────────
+
+function hasAnnotations(text) {
+  return /^\[(?:✦|◆)/.test(text.trim());
+}
+
+function stripAnnotations(text) {
+  return text.split('\n')
+    .filter(line => !/^\[(?:✦|◆)/.test(line))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function formatChunksAsText(chunks, hasEmotion, hasVoice) {
+  return chunks.map(c => {
+    let marker = '';
+    if (hasEmotion && c.emotion) marker += `[✦ ${c.emotion} · ${c.instruction || 'Read naturally.'}]`;
+    if (hasVoice && c.speaker) {
+      if (marker) marker += ' ';
+      marker += `[◆ ${c.speaker} · ${VOICE_LABELS[c.voice] || c.voice}]`;
+    }
+    return marker ? `${marker}\n${c.text}` : c.text;
+  }).join('\n\n');
+}
+
+function parseAnnotationsFromText(text) {
+  const chunks = [];
+  for (const part of text.split(/\n(?=\[(?:✦|◆))/)) {
+    if (!part.trim()) continue;
+    const nl = part.indexOf('\n');
+    if (nl === -1) continue;
+    const markerLine = part.slice(0, nl).trim();
+    const chunkText = part.slice(nl + 1).trim();
+    if (!chunkText) continue;
+    const chunk = { text: chunkText, emotion: 'neutral', instruction: 'Read naturally.', voice: selectedVoice, speaker: null };
+    const eMatch = markerLine.match(/\[✦\s*([^·\]]+?)(?:\s*·\s*([^\]✦◆]+?))?\s*\]/);
+    if (eMatch) { chunk.emotion = eMatch[1].trim().toLowerCase(); if (eMatch[2]) chunk.instruction = eMatch[2].trim(); }
+    const vMatch = markerLine.match(/\[◆\s*([^·\]]+?)(?:\s*·\s*([^\]]+?))?\s*\]/);
+    if (vMatch) {
+      chunk.speaker = vMatch[1].trim();
+      const vName = vMatch[2]?.trim();
+      if (vName) { const e = Object.entries(VOICE_LABELS).find(([,v]) => v.toLowerCase() === vName.toLowerCase()); if (e) chunk.voice = e[0]; }
+    }
+    chunks.push(chunk);
+  }
+  return chunks.length > 0 ? chunks : null;
 }
 
 // ── Clear & Text Input ────────────────────────────────
@@ -105,18 +146,20 @@ function clearParse() {
   parsedEmotionData = null;
   parsedVoiceData = null;
   speakerMap = {};
-  const av = document.getElementById('annotatedView');
-  if (av) { av.style.display = 'none'; av.innerHTML = ''; }
+  const ta = document.getElementById('textInput');
+  if (ta && hasAnnotations(ta.value)) ta.value = stripAnnotations(ta.value);
+  const status = document.getElementById('parseStatus');
+  if (status) status.style.display = 'none';
+  updateCount();
 }
 
 function onTextInput() {
-  // Only clear parse if text actually changed (user typed/pasted)
   if (parsedEmotionData || parsedVoiceData) {
     parsedEmotionData = null;
     parsedVoiceData = null;
     parsedEmotionChunks = null;
-    const av = document.getElementById('annotatedView');
-    if (av) { av.style.display = 'none'; av.innerHTML = ''; }
+    const status = document.getElementById('parseStatus');
+    if (status) status.style.display = 'none';
   }
   updateCount();
 }
@@ -130,8 +173,10 @@ function rebuildAndRender() {
 
   if (!hasEmotion && !hasVoice) {
     parsedEmotionChunks = null;
-    const av = document.getElementById('annotatedView');
-    if (av) { av.style.display = 'none'; av.innerHTML = ''; }
+    const ta = document.getElementById('textInput');
+    if (ta && hasAnnotations(ta.value)) ta.value = stripAnnotations(ta.value);
+    const status = document.getElementById('parseStatus');
+    if (status) status.style.display = 'none';
     return;
   }
 
@@ -168,38 +213,14 @@ function rebuildAndRender() {
 // ── Render ────────────────────────────────────────────
 
 function renderMerged(chunks, hasEmotion, hasVoice) {
-  const av = document.getElementById('annotatedView');
-  av.style.display = 'block';
-  av.innerHTML = `<div class="annotated-view">${
-    chunks.map(c => {
-      let pills = '';
-
-      // Emotion pill
-      if (hasEmotion && c.emotion) {
-        pills += `<span class="emotion-pill">✦ ${c.emotion.toUpperCase()}</span> `;
-      }
-
-      // Voice/speaker pill
-      if (hasVoice && voiceMode === 'voice') {
-        if (c.speaker) {
-          const color = VOICE_COLORS[c.voice] || '#8a877f';
-          const voiceName = VOICE_LABELS[c.voice] || c.voice;
-          pills += `<span class="emotion-pill" style="color:${color};border-color:${color}33;background:${color}11;">◆ ${c.speaker} <span style="opacity:0.6;font-size:9px;">· ${voiceName}</span></span>`;
-        }
-      } else if (voiceMode === 'narrator' && document.getElementById('multiVoiceToggle')?.checked) {
-        const isD = isDialogue(c.text);
-        pills += `<span style="font-family:'DM Mono',monospace;font-size:9px;color:${isD?'var(--accent)':'var(--text-muted)'};">${isD?'◆ SPEAKER':'○ NARRATOR'}</span>`;
-      }
-
-      return `
-      <div class="annotated-chunk">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">${pills}</div>
-        ${hasEmotion && c.instruction ? `<div class="emotion-instr">${c.instruction}</div>` : ''}
-        <div class="annotated-text">${c.text.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
-      </div>`;
-    }).join('')
-  }</div>
-  <button class="clear-parse" onclick="clearParse()">× Clear parse</button>`;
+  const ta = document.getElementById('textInput');
+  ta.value = formatChunksAsText(chunks, hasEmotion, hasVoice);
+  const status = document.getElementById('parseStatus');
+  if (status) {
+    document.getElementById('parseStatusLabel').textContent = `✦ ${chunks.length} segment${chunks.length !== 1 ? 's' : ''} parsed`;
+    status.style.display = 'flex';
+  }
+  updateCount();
 }
 
 // ── Dialogue Detection ────────────────────────────────
@@ -414,7 +435,6 @@ async function parseEmotion() {
 
     parsedEmotionData = { segments, results };
     rebuildAndRender();
-    saveParseToHistory(text);
 
   } catch(err) {
     alert('Parse failed: ' + err.message);
@@ -464,7 +484,6 @@ async function parseVoice() {
 
     parsedVoiceData = { segments, annotations };
     rebuildAndRender();
-    saveParseToHistory(text);
 
   } catch(err) {
     alert('Voice parse failed: ' + err.message);
@@ -535,7 +554,6 @@ async function parseBoth() {
     parsedEmotionData = { segments, results: emotionResults };
     parsedVoiceData = { segments, annotations: voiceAnnotations };
     rebuildAndRender();
-    saveParseToHistory(text);
 
   } catch(err) {
     alert('Parse failed: ' + err.message);

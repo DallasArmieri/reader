@@ -140,7 +140,9 @@ audio { display: none; }
 .emotion-pill { display: inline-flex; align-items: center; gap: 5px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--success); border: 1px solid rgba(110,201,138,0.35); background: rgba(110,201,138,0.08); border-radius: 4px; padding: 2px 8px; margin-bottom: 6px; letter-spacing: 0.06em; }
 .emotion-instr { font-family: 'DM Mono', monospace; font-size: 10px; color: rgba(110,201,138,0.6); margin-bottom: 8px; font-style: italic; line-height: 1.5; padding-left: 2px; }
 .annotated-text { color: var(--text-dim); }
-.clear-parse { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); cursor: pointer; background: none; border: none; padding: 0; }
+.parse-status-row { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; padding: 5px 10px; background: rgba(110,201,138,0.05); border: 1px solid rgba(110,201,138,0.18); border-radius: var(--radius); }
+.parse-status-label { font-family: 'DM Mono', monospace; font-size: 10px; color: rgba(110,201,138,0.7); }
+.clear-parse { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); cursor: pointer; background: none; border: none; padding: 0; }
 .clear-parse:active { color: var(--danger); }
 
 /* Speaker table */
