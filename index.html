@@ -302,6 +302,19 @@
     </div>
 
     <div class="section">
+      <div class="section-label">Downloads</div>
+      <div class="key-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);">Auto-download on generate</span>
+          <label class="toggle" style="flex-shrink:0;margin-left:16px;">
+            <input type="checkbox" id="autoDownloadToggle" onchange="autoDownload=this.checked; saveSettings()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
       <div class="section-label">Bookmarklet</div>
       <div class="key-box">
         <p style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);line-height:1.7;margin-bottom:12px;">

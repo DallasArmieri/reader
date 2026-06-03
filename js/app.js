@@ -6,6 +6,7 @@ let playbackSpeed = 1.0;
 let currentAudioUrl = null;
 let currentArticleId = null;
 let savePositionTimer = null;
+let autoDownload = false;
 const CHUNK_SIZE = 4000;
 
 // ── Init ──────────────────────────────────────────────
@@ -351,7 +352,7 @@ async function generateAudio() {
     const id = 'art_' + Date.now();
     currentArticleId = id;
     addToHistory(id, title, rawText);
-    localStorage.setItem('reader_text_' + id, text);
+    localStorage.setItem('reader_text_' + id, rawText);
 
     if (totalLen < 4 * 1024 * 1024) {
       try {
@@ -368,10 +369,12 @@ async function generateAudio() {
     const dl = document.getElementById('downloadLink');
     dl.download = title.replace(/[^\w\s-]/g, '').trim().slice(0, 60) + '.mp3';
     dl.href = currentAudioUrl;
+    dl.style.display = autoDownload ? 'none' : '';
     playerBox.className = 'player visible';
     progressBox.className = 'progress-box';
     audio.play();
     setupMediaSession(title);
+    if (autoDownload) dl.click();
 
   } catch (err) {
     showError(err.message);

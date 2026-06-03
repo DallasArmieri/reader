@@ -154,7 +154,8 @@ function saveSettings() {
     granularity: document.getElementById('parseGranularity')?.value || 'line',
     genreTone: document.getElementById('genreToneInput')?.value || '',
     narratorVoice: document.getElementById('narratorVoice')?.value || 'onyx',
-    dialogueVoice: document.getElementById('dialogueVoice')?.value || 'nova'
+    dialogueVoice: document.getElementById('dialogueVoice')?.value || 'nova',
+    autoDownload: autoDownload
   };
   localStorage.setItem('reader_settings', JSON.stringify(settings));
 }
@@ -218,6 +219,12 @@ function loadSettings() {
     if (s.voicePlusEnabled) {
       const el = document.getElementById('voicePlusToggle');
       if (el) { el.checked = true; toggleVoicePlus(true); }
+    }
+
+    if (s.autoDownload) {
+      autoDownload = true;
+      const el = document.getElementById('autoDownloadToggle');
+      if (el) el.checked = true;
     }
 
   } catch(e) {}
