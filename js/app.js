@@ -39,7 +39,7 @@ document.getElementById('bookmarkletCode').textContent = bookmarklet;
     try {
       const payload = JSON.parse(decodeURIComponent(hash.slice('#incoming='.length)));
       if (payload.text) {
-        document.getElementById('textInput').value = payload.text;
+        setTextValue(payload.text);
         if (payload.title) document.getElementById('textInput').dataset.title = payload.title;
         updateCount();
       }
@@ -153,6 +153,12 @@ function updatePlayerProgress() {
   elapsed.textContent = formatTime(audio.currentTime);
 }
 
+document.getElementById('textInput').addEventListener('paste', e => {
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+  document.execCommand('insertText', false, text);
+});
+
 function initPlayer() {
   const audio = document.getElementById('audioPlayer');
 
@@ -218,8 +224,7 @@ function setupMediaSession(title) {
 
 // ── Char count & read time ────────────────────────────
 function updateCount() {
-  const raw = document.getElementById('textInput').value;
-  const text = hasAnnotations(raw) ? stripAnnotations(raw) : raw;
+  const text = getTextValue();
   const len = text.length;
   document.getElementById('charCount').textContent = len.toLocaleString() + ' characters';
   const rate = selectedModel === 'tts-1-hd' ? 0.030 : 0.015;
@@ -284,8 +289,7 @@ async function fetchChunk(text, voiceInstruction, voiceOverride) {
 
 // ── Generate ──────────────────────────────────────────
 async function generateAudio() {
-  const text = document.getElementById('textInput').value.trim();
-  const rawText = hasAnnotations(text) ? stripAnnotations(text) : text;
+  const rawText = getTextValue();
   const title = document.getElementById('textInput').dataset.title || rawText.slice(0, 60) + (rawText.length > 60 ? '…' : '');
   const btn = document.getElementById('generateBtn');
   const errorBox = document.getElementById('errorBox');
@@ -309,8 +313,8 @@ async function generateAudio() {
   let chunks;
   if (parsedEmotionChunks) {
     chunks = parsedEmotionChunks;
-  } else if (hasAnnotations(text)) {
-    chunks = parseAnnotationsFromText(text) || splitIntoChunks(rawText, CHUNK_SIZE).map(t => ({ text: t, instruction: null, voice: selectedVoice }));
+  } else if (hasParsedBlocks()) {
+    chunks = parseAnnotationsFromDOM() || splitIntoChunks(rawText, CHUNK_SIZE).map(t => ({ text: t, instruction: null, voice: selectedVoice }));
   } else if (multiVoiceOn && voiceMode === 'narrator') {
     const nv = document.getElementById('narratorVoice')?.value || selectedVoice;
     const dv = document.getElementById('dialogueVoice')?.value || selectedVoice;

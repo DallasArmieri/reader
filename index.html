@@ -85,7 +85,7 @@
           </button>
         </div>
       </div>
-      <textarea id="textInput" placeholder="Paste your article or any text here…" oninput="onTextInput()"></textarea>
+      <div id="textInput" class="text-editable" contenteditable="true" data-placeholder="Paste your article or any text here…" data-title="" oninput="onTextInput()"></div>
       <div id="parseStatus" class="parse-status-row" style="display:none;">
         <span class="parse-status-label" id="parseStatusLabel">✦ Parsed</span>
         <button class="clear-parse" onclick="clearParse()">× clear</button>

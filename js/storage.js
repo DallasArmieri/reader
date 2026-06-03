@@ -105,7 +105,7 @@ function loadFromHistory(id) {
   switchTab('read');
 
   if (storedText) {
-    document.getElementById('textInput').value = storedText;
+    setTextValue(storedText);
     document.getElementById('textInput').dataset.title = item.title;
     updateCount();
   }

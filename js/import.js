@@ -152,7 +152,7 @@ function handleFileUpload(input) {
   const baseName = file.name.replace(/\.[^.]+$/, '');
 
   function setResult(text, title) {
-    document.getElementById('textInput').value = text;
+    setTextValue(text);
     document.getElementById('textInput').dataset.title = title;
     onTextInput();
   }
@@ -287,7 +287,7 @@ async function fetchUrl() {
     const articleEl = extractArticle(doc);
     const text = extractTextFromDoc(articleEl);
     if (text.length < 100) throw new Error('Could not extract article text from this page');
-    document.getElementById('textInput').value = text;
+    setTextValue(text);
     document.getElementById('urlInput').value = '';
     document.getElementById('urlInputRow').style.display = 'none';
     document.getElementById('textInput').dataset.title = title;

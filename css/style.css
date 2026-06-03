@@ -49,10 +49,17 @@ body { background: var(--bg); color: var(--text); font-family: 'Lora', Georgia, 
 .btn-fetch:active { border-color: var(--accent); color: var(--accent); }
 .btn-fetch:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* Textarea */
-textarea { width: 100%; height: 180px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; font-size: 15px; line-height: 1.7; font-family: 'Lora', Georgia, serif; color: var(--text); resize: vertical; outline: none; transition: border-color 0.2s; }
-textarea:focus { border-color: var(--accent-dim); }
-textarea::placeholder { color: var(--text-muted); font-style: italic; }
+/* Text editor */
+.text-editable { width: 100%; min-height: 180px; max-height: 480px; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; font-size: 15px; line-height: 1.7; font-family: 'Lora', Georgia, serif; color: var(--text); outline: none; transition: border-color 0.2s; white-space: pre-wrap; word-break: break-word; box-sizing: border-box; }
+.text-editable:focus { border-color: var(--accent-dim); }
+.text-editable:empty::before { content: attr(data-placeholder); color: var(--text-muted); font-style: italic; pointer-events: none; display: block; }
+/* Parse blocks */
+.parse-block { margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.parse-block:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.parse-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; user-select: none; cursor: default; }
+.parse-tag-emotion { font-family: 'DM Mono', monospace; font-size: 10px; color: rgba(110,201,138,0.9); border: 1px solid rgba(110,201,138,0.3); background: rgba(110,201,138,0.07); border-radius: 4px; padding: 2px 8px; letter-spacing: 0.05em; }
+.parse-tag-voice { font-family: 'DM Mono', monospace; font-size: 10px; border-radius: 4px; padding: 2px 8px; letter-spacing: 0.05em; }
+.parse-text { white-space: pre-wrap; }
 .char-row { display: flex; justify-content: space-between; margin-top: 6px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
 .read-time { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent-dim); margin-top: 6px; }
 

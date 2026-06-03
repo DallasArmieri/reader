@@ -90,53 +90,58 @@ function setVoiceMode(mode) {
   saveSettings();
 }
 
-// ── Annotation helpers ───────────────────────────────
+// ── Text editor helpers ───────────────────────────────
 
-function hasAnnotations(text) {
-  return /^\[(?:✦|◆)/.test(text.trim());
+function getTextValue() {
+  const el = document.getElementById('textInput');
+  const blocks = el.querySelectorAll('.parse-text');
+  if (blocks.length > 0) return Array.from(blocks).map(b => b.innerText.trim()).filter(Boolean).join('\n\n');
+  return el.innerText.trim();
 }
 
-function stripAnnotations(text) {
-  return text.split('\n')
-    .filter(line => !/^\[(?:✦|◆)/.test(line))
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+function setTextValue(text) {
+  const el = document.getElementById('textInput');
+  el.textContent = text;
 }
 
-function formatChunksAsText(chunks, hasEmotion, hasVoice) {
-  return chunks.map(c => {
-    let marker = '';
-    if (hasEmotion && c.emotion) marker += `[✦ ${c.emotion} · ${c.instruction || 'Read naturally.'}]`;
-    if (hasVoice && c.speaker) {
-      if (marker) marker += ' ';
-      marker += `[◆ ${c.speaker} · ${VOICE_LABELS[c.voice] || c.voice}]`;
-    }
-    return marker ? `${marker}\n${c.text}` : c.text;
-  }).join('\n\n');
+function hasParsedBlocks() {
+  return !!document.getElementById('textInput').querySelector('.parse-block');
 }
 
-function parseAnnotationsFromText(text) {
-  const chunks = [];
-  for (const part of text.split(/\n(?=\[(?:✦|◆))/)) {
-    if (!part.trim()) continue;
-    const nl = part.indexOf('\n');
-    if (nl === -1) continue;
-    const markerLine = part.slice(0, nl).trim();
-    const chunkText = part.slice(nl + 1).trim();
-    if (!chunkText) continue;
+function parseAnnotationsFromDOM() {
+  const blocks = document.getElementById('textInput').querySelectorAll('.parse-block');
+  if (!blocks.length) return null;
+  return Array.from(blocks).map(block => {
+    const chunkText = block.querySelector('.parse-text')?.innerText.trim() || '';
+    if (!chunkText) return null;
     const chunk = { text: chunkText, emotion: 'neutral', instruction: 'Read naturally.', voice: selectedVoice, speaker: null };
-    const eMatch = markerLine.match(/\[✦\s*([^·\]]+?)(?:\s*·\s*([^\]✦◆]+?))?\s*\]/);
-    if (eMatch) { chunk.emotion = eMatch[1].trim().toLowerCase(); if (eMatch[2]) chunk.instruction = eMatch[2].trim(); }
-    const vMatch = markerLine.match(/\[◆\s*([^·\]]+?)(?:\s*·\s*([^\]]+?))?\s*\]/);
-    if (vMatch) {
-      chunk.speaker = vMatch[1].trim();
-      const vName = vMatch[2]?.trim();
-      if (vName) { const e = Object.entries(VOICE_LABELS).find(([,v]) => v.toLowerCase() === vName.toLowerCase()); if (e) chunk.voice = e[0]; }
+    const eTag = block.querySelector('.parse-tag-emotion');
+    if (eTag) {
+      const parts = eTag.innerText.split(' · ');
+      chunk.emotion = parts[0].replace('✦ ', '').trim().toLowerCase();
+      if (parts[1]) chunk.instruction = parts.slice(1).join(' · ').trim();
     }
-    chunks.push(chunk);
-  }
-  return chunks.length > 0 ? chunks : null;
+    const vTag = block.querySelector('.parse-tag-voice');
+    if (vTag) {
+      const parts = vTag.innerText.split(' · ');
+      chunk.speaker = parts[0].replace('◆ ', '').trim();
+      if (parts[1]) { const e = Object.entries(VOICE_LABELS).find(([,v]) => v.toLowerCase() === parts[1].trim().toLowerCase()); if (e) chunk.voice = e[0]; }
+    }
+    return chunk;
+  }).filter(Boolean);
+}
+
+function renderParseHTML(chunks, hasEmotion, hasVoice) {
+  document.getElementById('textInput').innerHTML = chunks.map(c => {
+    let tags = '';
+    if (hasEmotion && c.emotion) tags += `<span class="parse-tag-emotion">✦ ${escHtml(c.emotion)} · ${escHtml(c.instruction || 'Read naturally.')}</span>`;
+    if (hasVoice && c.speaker) {
+      const col = VOICE_COLORS[c.voice] || '#8a877f';
+      tags += `<span class="parse-tag-voice" style="color:${col};border:1px solid ${col}33;background:${col}11;">◆ ${escHtml(c.speaker)} · ${escHtml(VOICE_LABELS[c.voice] || c.voice)}</span>`;
+    }
+    const tagsRow = tags ? `<div class="parse-tags" contenteditable="false">${tags}</div>` : '';
+    return `<div class="parse-block">${tagsRow}<div class="parse-text">${escHtml(c.text).replace(/\n/g,'<br>')}</div></div>`;
+  }).join('');
 }
 
 // ── Clear & Text Input ────────────────────────────────
@@ -146,8 +151,7 @@ function clearParse() {
   parsedEmotionData = null;
   parsedVoiceData = null;
   speakerMap = {};
-  const ta = document.getElementById('textInput');
-  if (ta && hasAnnotations(ta.value)) ta.value = stripAnnotations(ta.value);
+  if (hasParsedBlocks()) setTextValue(getTextValue());
   const status = document.getElementById('parseStatus');
   if (status) status.style.display = 'none';
   updateCount();
@@ -173,8 +177,7 @@ function rebuildAndRender() {
 
   if (!hasEmotion && !hasVoice) {
     parsedEmotionChunks = null;
-    const ta = document.getElementById('textInput');
-    if (ta && hasAnnotations(ta.value)) ta.value = stripAnnotations(ta.value);
+    if (hasParsedBlocks()) setTextValue(getTextValue());
     const status = document.getElementById('parseStatus');
     if (status) status.style.display = 'none';
     return;
@@ -213,8 +216,7 @@ function rebuildAndRender() {
 // ── Render ────────────────────────────────────────────
 
 function renderMerged(chunks, hasEmotion, hasVoice) {
-  const ta = document.getElementById('textInput');
-  ta.value = formatChunksAsText(chunks, hasEmotion, hasVoice);
+  renderParseHTML(chunks, hasEmotion, hasVoice);
   const status = document.getElementById('parseStatus');
   if (status) {
     document.getElementById('parseStatusLabel').textContent = `✦ ${chunks.length} segment${chunks.length !== 1 ? 's' : ''} parsed`;
@@ -402,7 +404,7 @@ async function assignSpeaker(text, speakerNames, lastSpeaker) {
 // ── Parse Emotion ─────────────────────────────────────
 
 async function parseEmotion() {
-  const text = document.getElementById('textInput').value.trim();
+  const text = getTextValue();
   if (!text) { alert('Paste some text on the Read tab first.'); return; }
   if (!OPENAI_KEY) { alert('No API key — add it in Settings.'); return; }
 
@@ -447,7 +449,7 @@ async function parseEmotion() {
 // ── Parse Voice ───────────────────────────────────────
 
 async function parseVoice() {
-  const text = document.getElementById('textInput').value.trim();
+  const text = getTextValue();
   if (!text) { alert('Paste some text on the Read tab first.'); return; }
   if (!OPENAI_KEY) { alert('No API key — add it in Settings.'); return; }
 
@@ -496,7 +498,7 @@ async function parseVoice() {
 // ── Parse Both Simultaneously ─────────────────────────
 
 async function parseBoth() {
-  const text = document.getElementById('textInput').value.trim();
+  const text = getTextValue();
   if (!text) { alert('Paste some text on the Read tab first.'); return; }
   if (!OPENAI_KEY) { alert('No API key — add it in Settings.'); return; }
 
