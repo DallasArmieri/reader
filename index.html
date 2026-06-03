@@ -56,7 +56,7 @@
         <span id="fetchBtnContent">Fetch</span>
       </button>
     </div>
-    <input type="file" id="fileInput" accept=".txt,.text" style="display:none;" onchange="handleFileUpload(this)">
+    <input type="file" id="fileInput" accept=".txt,.text,.md,.markdown,.html,.htm,.pdf,.epub,.docx,.doc" style="display:none;" onchange="handleFileUpload(this)">
 
     <div class="section">
       <div class="section-label">Text</div>
@@ -329,6 +329,7 @@
 <!-- Load order matters: storage and voiceplus before app -->
 <script src="js/storage.js"></script>
 <script src="js/voiceplus.js"></script>
+<script src="js/import.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

@@ -1,10 +1,11 @@
-const CACHE = 'reader-v2';
+const CACHE = 'reader-v3';
 const ASSETS = [
   '/reader/',
   '/reader/index.html',
   '/reader/css/style.css',
   '/reader/js/storage.js',
   '/reader/js/voiceplus.js',
+  '/reader/js/import.js',
   '/reader/js/app.js',
   '/reader/manifest.json',
   '/reader/icon-192.png',
