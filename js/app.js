@@ -5,6 +5,7 @@ let selectedModel = 'tts-1-hd';
 let playbackSpeed = 1.0;
 let currentAudioUrl = null;
 let currentArticleId = null;
+let savePositionTimer = null;
 const CHUNK_SIZE = 4000;
 
 // ── Init ──────────────────────────────────────────────
@@ -157,7 +158,10 @@ function initPlayer() {
 
   audio.addEventListener('timeupdate', () => {
     updatePlayerProgress();
-    if (currentArticleId) savePosition(currentArticleId, Math.floor(audio.currentTime));
+    if (currentArticleId) {
+      clearTimeout(savePositionTimer);
+      savePositionTimer = setTimeout(() => savePosition(currentArticleId, Math.floor(audio.currentTime)), 5000);
+    }
     if ('mediaSession' in navigator && audio.duration) {
       try {
         navigator.mediaSession.setPositionState({
@@ -182,6 +186,10 @@ function initPlayer() {
   audio.addEventListener('pause', () => {
     const btn = document.getElementById('playPauseBtn');
     if (btn) btn.textContent = '▶';
+    if (currentArticleId) {
+      clearTimeout(savePositionTimer);
+      savePosition(currentArticleId, Math.floor(audio.currentTime));
+    }
   });
 
   document.getElementById('playerScrubberTrack').addEventListener('click', e => {

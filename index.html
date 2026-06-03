@@ -110,8 +110,13 @@
     </div>
 
     <div class="player" id="playerBox">
-      <div class="player-title" id="playerTitle"></div>
-      <div class="player-label">Now playing</div>
+      <div class="player-header">
+        <div>
+          <div class="player-title" id="playerTitle"></div>
+          <div class="player-label">Now playing</div>
+        </div>
+        <a class="download-link" id="downloadLink" href="#" download="">↓ Save MP3</a>
+      </div>
       <audio id="audioPlayer"></audio>
       <div class="player-scrubber-wrap">
         <div class="player-scrubber-track" id="playerScrubberTrack">
@@ -126,21 +131,20 @@
         <button class="skip-btn" onclick="skipAudio(-15)">← 15s</button>
         <button class="play-pause-btn" id="playPauseBtn" onclick="togglePlayPause()">▶</button>
         <button class="skip-btn" onclick="skipAudio(15)">15s →</button>
-      </div>
-      <div class="speed-btn-wrap" style="margin-top:14px;">
-        <button class="speed-btn" id="speedBtnPlayback" onclick="toggleSpeedPopup('playback')">1.0×</button>
-        <div class="speed-popup" id="speedPopupPlayback">
-          <input type="range" id="playbackSlider" min="0.5" max="5.0" step="0.05" value="1.0" oninput="updatePlaybackSpeed(this.value)">
-          <div class="speed-ticks">
-            <span class="speed-tick">0.5×</span>
-            <span class="speed-tick">1.0×</span>
-            <span class="speed-tick">2.0×</span>
-            <span class="speed-tick">3.5×</span>
-            <span class="speed-tick">5.0×</span>
+        <div class="speed-btn-wrap player-speed-wrap">
+          <button class="speed-btn" id="speedBtnPlayback" onclick="toggleSpeedPopup('playback')">1.0×</button>
+          <div class="speed-popup" id="speedPopupPlayback">
+            <input type="range" id="playbackSlider" min="0.5" max="5.0" step="0.05" value="1.0" oninput="updatePlaybackSpeed(this.value)">
+            <div class="speed-ticks">
+              <span class="speed-tick">0.5×</span>
+              <span class="speed-tick">1.0×</span>
+              <span class="speed-tick">2.0×</span>
+              <span class="speed-tick">3.5×</span>
+              <span class="speed-tick">5.0×</span>
+            </div>
           </div>
         </div>
       </div>
-      <a class="download-link" id="downloadLink" href="#" download="">↓ Save MP3</a>
     </div>
 
     <div class="footer-note">OpenAI TTS · pay-as-you-go · no monthly fee<br><span id="writeTime"></span></div>
