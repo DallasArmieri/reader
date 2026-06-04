@@ -168,6 +168,7 @@ function saveSettings() {
     voiceMode: voiceMode,
     granularity: document.getElementById('parseGranularity')?.value || 'line',
     genreTone: document.getElementById('genreToneInput')?.value || '',
+    voiceInstruction: document.getElementById('voiceInstructionInput')?.value || '',
     narratorVoice: document.getElementById('narratorVoice')?.value || 'onyx',
     dialogueVoice: document.getElementById('dialogueVoice')?.value || 'nova',
     autoDownload: autoDownload
@@ -210,6 +211,11 @@ function loadSettings() {
     if (s.genreTone) {
       const el = document.getElementById('genreToneInput');
       if (el) el.value = s.genreTone;
+    }
+
+    if (s.voiceInstruction) {
+      const el = document.getElementById('voiceInstructionInput');
+      if (el) el.value = s.voiceInstruction;
     }
 
     if (s.narratorVoice) {

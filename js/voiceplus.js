@@ -267,6 +267,24 @@ function splitByGranularity(text, mode) {
   return groups;
 }
 
+// ── Dialogue-Aware Splitting ──────────────────────────
+
+function splitByDialogue(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const segments = [];
+  let narratorBuf = [];
+  for (const line of lines) {
+    if (/[“”‘’"]/.test(line)) {
+      if (narratorBuf.length) { segments.push(narratorBuf.join('\n')); narratorBuf = []; }
+      segments.push(line);
+    } else {
+      narratorBuf.push(line);
+    }
+  }
+  if (narratorBuf.length) segments.push(narratorBuf.join('\n'));
+  return segments;
+}
+
 // ── Speaker Detection ─────────────────────────────────
 
 async function detectSpeakers(fullText) {
@@ -401,6 +419,29 @@ async function assignSpeaker(text, speakerNames, lastSpeaker) {
   } catch(e) { return null; }
 }
 
+// ── Attribution Pre-pass ──────────────────────────────
+
+function extractAttributedSpeaker(text, speakerNames) {
+  if (!/[""''"']/.test(text)) return 'narrator';
+  if (!speakerNames.length) return null;
+  const verbs = 'said|asked|replied|answered|called|cried|shouted|whispered|muttered|murmured|added|continued|interrupted|insisted|demanded|snapped|pleaded|suggested|explained|admitted|laughed|sighed|groaned|hissed|barked|began|exclaimed|responded|remarked|declared|breathed|growled|urged';
+  const esc = speakerNames.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const N = `(${esc.join('|')})`;
+  const Q = `[""''"']`;
+  const QN = `[^""''"'\\n]`;
+  const V = `(?:${verbs})`;
+  const pats = [
+    new RegExp(`${Q}${QN}{2,}${Q}[,!?.]?\\s+${N}\\s+${V}`, 'i'),
+    new RegExp(`${Q}${QN}{2,}${Q}[,!?.]?\\s+${V}\\s+${N}`, 'i'),
+    new RegExp(`(?:^|\\n)\\s*${N}\\s+${V}[,:]?\\s*${Q}`, 'im'),
+  ];
+  for (const pat of pats) {
+    const m = text.match(pat);
+    if (m?.[1]) return m[1];
+  }
+  return null;
+}
+
 // ── Parse Emotion ─────────────────────────────────────
 
 async function parseEmotion() {
@@ -460,8 +501,7 @@ async function parseVoice() {
   parsedVoiceData = null;
   speakerMap = {};
 
-  const mode = getGranularity();
-  const segments = splitByGranularity(text, mode).map(s => typeof s === 'string' ? s : s.text);
+  const segments = splitByDialogue(text);
 
   try {
     const speakers = await detectSpeakers(text);
@@ -476,16 +516,30 @@ async function parseVoice() {
     let lastSpeaker = null;
     let done = 0;
     const annotations = new Array(segments.length);
+    const speakerNamesList = Object.keys(speakerMap);
     for (let b = 0; b < segments.length; b += BATCH) {
       const indices = Array.from({ length: Math.min(BATCH, segments.length - b) }, (_, k) => b + k);
-      const results = await Promise.all(indices.map(i => assignSpeaker(segments[i], speakerNames, lastSpeaker)));
-      for (let k = 0; k < results.length; k++) {
-        const i = b + k;
-        const speaker = results[k];
-        if (speaker) lastSpeaker = speaker;
-        annotations[i] = { text: segments[i], speaker, voice: speaker ? speakerMap[speaker] : selectedVoice };
+      const needsAPI = [];
+      for (const i of indices) {
+        const attributed = extractAttributedSpeaker(segments[i], speakerNamesList);
+        if (attributed !== null) {
+          const speaker = attributed === 'narrator' ? null : attributed;
+          if (speaker) lastSpeaker = speaker;
+          annotations[i] = { text: segments[i], speaker, voice: speaker ? speakerMap[speaker] : selectedVoice };
+        } else {
+          needsAPI.push(i);
+        }
       }
-      done += results.length;
+      if (needsAPI.length) {
+        const results = await Promise.all(needsAPI.map(i => assignSpeaker(segments[i], speakerNames, lastSpeaker)));
+        for (let k = 0; k < results.length; k++) {
+          const i = needsAPI[k];
+          const speaker = results[k];
+          if (speaker) lastSpeaker = speaker;
+          annotations[i] = { text: segments[i], speaker, voice: speaker ? speakerMap[speaker] : selectedVoice };
+        }
+      }
+      done += indices.length;
       if (content) content.innerHTML = `<div class="spinner-sm"></div> ${done}/${segments.length}`;
     }
 
@@ -518,8 +572,7 @@ async function parseBoth() {
   parsedVoiceData = null;
   speakerMap = {};
 
-  const mode = getGranularity();
-  const segments = splitByGranularity(text, mode).map(s => typeof s === 'string' ? s : s.text);
+  const segments = splitByDialogue(text);
 
   try {
     // Detect speakers first (needed for voice assignment)
@@ -541,24 +594,29 @@ async function parseBoth() {
     let lastSpeaker = null;
     let done = 0;
     const genre = document.getElementById('genreToneInput')?.value.trim();
+    const speakerNamesList = Object.keys(speakerMap);
 
     for (let b = 0; b < segments.length; b += BATCH) {
       const indices = Array.from({ length: Math.min(BATCH, segments.length - b) }, (_, k) => b + k);
-      const results = await Promise.all(indices.map(i =>
-        Promise.all([
-          analyseEmotion(segments[i], segments[i - 1], segments[i + 1], genre),
-          assignSpeaker(segments[i], speakerNames, lastSpeaker)
-        ])
-      ));
-      for (let k = 0; k < results.length; k++) {
-        const i = b + k;
-        const [emotionParsed, speaker] = results[k];
+      const regexSpeakers = indices.map(i => extractAttributedSpeaker(segments[i], speakerNamesList));
+      const needsAPISpeaker = indices.filter((_, k) => regexSpeakers[k] === null);
+      const [emotionBatch, speakerAPIs] = await Promise.all([
+        Promise.all(indices.map(i => analyseEmotion(segments[i], segments[i - 1], segments[i + 1], genre))),
+        Promise.all(needsAPISpeaker.map(i => assignSpeaker(segments[i], speakerNames, lastSpeaker)))
+      ]);
+      const apiSpeakerMap = {};
+      needsAPISpeaker.forEach((i, k) => { apiSpeakerMap[i] = speakerAPIs[k]; });
+      for (let k = 0; k < indices.length; k++) {
+        const i = indices[k];
+        const emotionParsed = emotionBatch[k];
+        const raw = regexSpeakers[k];
+        const speaker = raw !== null ? (raw === 'narrator' ? null : raw) : (apiSpeakerMap[i] || null);
         if (speaker) lastSpeaker = speaker;
         const segVoice = speaker ? speakerMap[speaker] : selectedVoice;
         emotionResults[i] = { text: segments[i], emotion: emotionParsed.emotion || 'neutral', instruction: emotionParsed.instruction || 'Read naturally.', voice: segVoice, speaker };
         voiceAnnotations[i] = { text: segments[i], speaker, voice: segVoice };
       }
-      done += results.length;
+      done += indices.length;
       if (emotionContent) emotionContent.innerHTML = `<div class="spinner-sm"></div> ${done}/${segments.length}`;
       if (voiceContent) voiceContent.innerHTML = `<div class="spinner-sm"></div> ${done}/${segments.length}`;
     }

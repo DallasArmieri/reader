@@ -272,7 +272,8 @@ async function fetchChunk(text, voiceInstruction, voiceOverride) {
     speed: apiSpeed
   };
   if (model === 'gpt-4o-mini-tts') {
-    body.instructions = voiceInstruction || 'Read naturally and clearly at a measured pace.';
+    const customInstr = document.getElementById('voiceInstructionInput')?.value.trim();
+    body.instructions = voiceInstruction || customInstr || 'Read naturally and clearly at a measured pace.';
   }
   const response = await fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST',
