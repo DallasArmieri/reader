@@ -49,6 +49,7 @@ function deleteHistory(e, id) {
   saveHistory(history);
   localStorage.removeItem('reader_audio_' + id);
   localStorage.removeItem('reader_text_' + id);
+  localStorage.removeItem('reader_parse_' + id);
   renderHistory();
 }
 
@@ -108,6 +109,26 @@ function loadFromHistory(id) {
     setTextValue(storedText);
     document.getElementById('textInput').dataset.title = item.title;
     updateCount();
+  }
+
+  const storedParse = localStorage.getItem('reader_parse_' + id);
+  if (storedParse) {
+    try {
+      const pd = JSON.parse(storedParse);
+      parsedEmotionChunks = pd.chunks;
+      parsedEmotionData = pd.hasEmotion ? { segments: pd.chunks.map(c => c.text), results: pd.chunks } : null;
+      parsedVoiceData = pd.hasVoice ? { segments: pd.chunks.map(c => c.text), annotations: pd.chunks } : null;
+      if (pd.hasVoice) {
+        speakerMap = {};
+        pd.chunks.forEach(c => { if (c.speaker) speakerMap[c.speaker] = c.voice; });
+      }
+      renderParseHTML(pd.chunks, pd.hasEmotion, pd.hasVoice);
+      const status = document.getElementById('parseStatus');
+      if (status) {
+        document.getElementById('parseStatusLabel').textContent = `✦ ${pd.chunks.length} segment${pd.chunks.length !== 1 ? 's' : ''} parsed`;
+        status.style.display = 'flex';
+      }
+    } catch(e) {}
   }
 
   if (storedAudio) {
@@ -174,8 +195,8 @@ function loadSettings() {
 
     if (s.model) {
       selectedModel = s.model;
-      document.getElementById('model-hd')?.classList.toggle('selected', s.model === 'tts-1-hd');
-      document.getElementById('model-std')?.classList.toggle('selected', s.model === 'tts-1');
+      const modelEl = document.getElementById('modelSelect');
+      if (modelEl) modelEl.value = s.model;
     }
 
     if (s.speed != null) {

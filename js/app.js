@@ -1,13 +1,14 @@
 // ── Core State ────────────────────────────────────────
 let OPENAI_KEY = localStorage.getItem('openai_key') || '';
 let selectedVoice = 'alloy';
-let selectedModel = 'tts-1-hd';
+let selectedModel = 'gpt-4o-mini-tts';
 let playbackSpeed = 1.0;
 let currentAudioUrl = null;
 let currentArticleId = null;
 let savePositionTimer = null;
 let autoDownload = false;
 const CHUNK_SIZE = 4000;
+const BASE_INSTRUCTION = 'Read as a professional audiobook narrator. Vary your pace naturally, give weight to important ideas, and let punctuation breathe.';
 
 // ── Init ──────────────────────────────────────────────
 if (OPENAI_KEY) {
@@ -80,9 +81,7 @@ function saveKey() {
   document.getElementById('keyHint').className = 'key-hint saved';
 }
 
-function selectModel(el, model) {
-  document.querySelectorAll('.model-btn').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
+function selectModel(model) {
   selectedModel = model;
   updateCount();
   saveSettings();
@@ -265,15 +264,17 @@ function splitIntoChunks(text, maxLen) {
 // ── API Call ──────────────────────────────────────────
 async function fetchChunk(text, voiceInstruction, voiceOverride) {
   const apiSpeed = Math.min(4.0, Math.max(0.25, playbackSpeed));
+  const input = /[.!?…”’”’’”]$/.test(text.trim()) ? text : text + ‘.’;
+  const useSmartModel = voicePlusEnabled || selectedModel === ‘gpt-4o-mini-tts’;
   const body = {
-    model: voicePlusEnabled ? 'gpt-4o-mini-tts' : selectedModel,
-    input: text,
+    model: useSmartModel ? ‘gpt-4o-mini-tts’ : selectedModel,
+    input: input,
     voice: voiceOverride || selectedVoice,
-    response_format: 'mp3',
+    response_format: ‘mp3’,
     speed: apiSpeed
   };
-  if (voicePlusEnabled && voiceInstruction) {
-    body.instructions = voiceInstruction;
+  if (useSmartModel) {
+    body.instructions = voiceInstruction || BASE_INSTRUCTION;
   }
   const response = await fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST',
@@ -353,6 +354,13 @@ async function generateAudio() {
     currentArticleId = id;
     addToHistory(id, title, rawText);
     localStorage.setItem('reader_text_' + id, rawText);
+    if (parsedEmotionChunks || hasParsedBlocks()) {
+      localStorage.setItem('reader_parse_' + id, JSON.stringify({
+        chunks,
+        hasEmotion: !!parsedEmotionData,
+        hasVoice: !!parsedVoiceData
+      }));
+    }
 
     if (totalLen < 4 * 1024 * 1024) {
       try {
