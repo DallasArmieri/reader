@@ -65,7 +65,7 @@ initPlayer();
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
   document.getElementById('panel-' + tab).classList.add('active');
   if (tab === 'history') renderHistory();
 }
@@ -264,7 +264,7 @@ function splitIntoChunks(text, maxLen) {
 // ── API Call ──────────────────────────────────────────
 async function fetchChunk(text, voiceInstruction, voiceOverride) {
   const apiSpeed = Math.min(4.0, Math.max(0.25, playbackSpeed));
-  const input = /[.!?…“‘’”]$/.test(text.trim()) ? text : text + “.”;
+  const input = /[.!?…”’”’’”]$/.test(text.trim()) ? text : text + ‘.’;
   const useSmartModel = voicePlusEnabled || selectedModel === ‘gpt-4o-mini-tts’;
   const body = {
     model: useSmartModel ? ‘gpt-4o-mini-tts’ : selectedModel,

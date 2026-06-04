@@ -1,4 +1,4 @@
-const CACHE = 'reader-v4';
+const CACHE = 'reader-v3';
 const ASSETS = [
   '/reader/',
   '/reader/index.html',
@@ -35,8 +35,7 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     fetch(e.request).then(res => {
       if (res && res.status === 200 && res.type === 'basic') {
-        const resClone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, resClone));
+        caches.open(CACHE).then(c => c.put(e.request, res.clone()));
       }
       return res;
     }).catch(() =>
