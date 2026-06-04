@@ -288,12 +288,17 @@
     </div>
 
     <div class="section">
-      <div class="section-label">Model</div>
-      <select id="modelSelect" class="speaker-voice-select" style="width:100%;padding:9px 10px;" onchange="selectModel(this.value)">
-        <option value="gpt-4o-mini-tts">Smart — gpt-4o-mini-tts · $0.015/1K</option>
-        <option value="tts-1-hd">HD — tts-1-hd · $0.030/1K</option>
-        <option value="tts-1">Standard — tts-1 · $0.015/1K</option>
-      </select>
+      <div class="section-label">Quality</div>
+      <div class="model-row">
+        <div class="model-btn selected" id="model-hd" onclick="selectModel(this, 'tts-1-hd')">
+          <span class="model-label">HD</span>
+          <span class="model-desc">Best quality · $0.030/1K chars</span>
+        </div>
+        <div class="model-btn" id="model-std" onclick="selectModel(this, 'tts-1')">
+          <span class="model-label">Standard</span>
+          <span class="model-desc">Fast · $0.015/1K chars</span>
+        </div>
+      </div>
     </div>
 
     <div class="section">

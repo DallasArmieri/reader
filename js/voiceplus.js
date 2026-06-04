@@ -114,7 +114,7 @@ function parseAnnotationsFromDOM() {
   return Array.from(blocks).map(block => {
     const chunkText = block.querySelector('.parse-text')?.innerText.trim() || '';
     if (!chunkText) return null;
-    const chunk = { text: chunkText, emotion: 'neutral', instruction: BASE_INSTRUCTION, voice: selectedVoice, speaker: null };
+    const chunk = { text: chunkText, emotion: 'neutral', instruction: 'Read naturally.', voice: selectedVoice, speaker: null };
     const eTag = block.querySelector('.parse-tag-emotion');
     if (eTag) {
       const parts = eTag.innerText.split(' · ');
