@@ -173,7 +173,9 @@ audio { display: none; }
 .history-item:active { border-color: var(--accent); }
 .history-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
 .history-item-title { font-size: 14px; color: var(--text); line-height: 1.4; flex: 1; }
-.history-item-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 0 0 0 8px; line-height: 1; flex-shrink: 0; }
+.history-item-rename { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 13px; padding: 0 4px; line-height: 1; flex-shrink: 0; }
+.history-item-rename:active { color: var(--accent); }
+.history-item-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 0 0 0 4px; line-height: 1; flex-shrink: 0; }
 .history-item-delete:active { color: var(--danger); }
 .history-item-meta { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-muted); display: flex; gap: 12px; }
 .history-resume { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent-dim); margin-top: 6px; }

@@ -43,6 +43,18 @@ function saveDuration(id, duration) {
   if (item && duration > 0) { item.duration = Math.floor(duration); saveHistory(history); }
 }
 
+function renameHistory(e, id) {
+  e.stopPropagation();
+  const history = getHistory();
+  const item = history.find(h => h.id === id);
+  if (!item) return;
+  const newTitle = prompt('Rename:', item.title);
+  if (newTitle === null || !newTitle.trim()) return;
+  item.title = newTitle.trim().slice(0, 200);
+  saveHistory(history);
+  renderHistory();
+}
+
 function deleteHistory(e, id) {
   e.stopPropagation();
   const history = getHistory().filter(h => h.id !== id);
@@ -59,7 +71,7 @@ function renderHistory() {
   const items = query ? history.filter(h => h.title.toLowerCase().includes(query)) : history;
 
   if (items.length === 0) {
-    list.innerHTML = '<div class="history-empty">' + (query ? 'No matches.' : 'No history yet.<br>Generate audio to see it here.') + '</div>';
+    list.innerHTML = '<div class="history-empty">' + (query ? 'No matches.' : 'No titles yet.<br>Generate audio to see it here.') + '</div>';
     return;
   }
   list.innerHTML = items.map(item => {
@@ -81,7 +93,10 @@ function renderHistory() {
       <div class="history-item" onclick="loadFromHistory('${item.id}')">
         <div class="history-item-header">
           <div class="history-item-title">${escHtml(item.title)}</div>
-          <button class="history-item-delete" onclick="deleteHistory(event, '${item.id}')">×</button>
+          <div style="display:flex;gap:2px;flex-shrink:0;">
+            <button class="history-item-rename" onclick="renameHistory(event, '${item.id}')">✎</button>
+            <button class="history-item-delete" onclick="deleteHistory(event, '${item.id}')">×</button>
+          </div>
         </div>
         <div class="history-item-meta">
           <span>${date}</span>

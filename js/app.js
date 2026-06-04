@@ -66,7 +66,7 @@ function switchTab(tab) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
   document.getElementById('panel-' + tab).classList.add('active');
-  if (tab === 'history') renderHistory();
+  if (tab === 'library') renderHistory();
 }
 
 // ── Settings ──────────────────────────────────────────
@@ -290,7 +290,7 @@ async function fetchChunk(text, voiceInstruction, voiceOverride) {
 // ── Generate ──────────────────────────────────────────
 async function generateAudio() {
   const rawText = getTextValue();
-  const title = document.getElementById('textInput').dataset.title || rawText.slice(0, 60) + (rawText.length > 60 ? '…' : '');
+  const title = document.getElementById('textInput').dataset.title || rawText.slice(0, 30) + (rawText.length > 30 ? '…' : '');
   const btn = document.getElementById('generateBtn');
   const errorBox = document.getElementById('errorBox');
   const playerBox = document.getElementById('playerBox');
