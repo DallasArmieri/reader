@@ -472,16 +472,21 @@ async function parseVoice() {
     content.innerHTML = '<div class="spinner-sm"></div> Assigning…';
     const speakerNames = Object.keys(speakerMap).join(', ');
 
+    const BATCH = 4;
     let lastSpeaker = null;
     let done = 0;
-    const annotations = [];
-    for (let i = 0; i < segments.length; i++) {
-      const speaker = await assignSpeaker(segments[i], speakerNames, lastSpeaker);
-      done++;
+    const annotations = new Array(segments.length);
+    for (let b = 0; b < segments.length; b += BATCH) {
+      const indices = Array.from({ length: Math.min(BATCH, segments.length - b) }, (_, k) => b + k);
+      const results = await Promise.all(indices.map(i => assignSpeaker(segments[i], speakerNames, lastSpeaker)));
+      for (let k = 0; k < results.length; k++) {
+        const i = b + k;
+        const speaker = results[k];
+        if (speaker) lastSpeaker = speaker;
+        annotations[i] = { text: segments[i], speaker, voice: speaker ? speakerMap[speaker] : selectedVoice };
+      }
+      done += results.length;
       if (content) content.innerHTML = `<div class="spinner-sm"></div> ${done}/${segments.length}`;
-      if (speaker) lastSpeaker = speaker;
-      const voice = speaker ? speakerMap[speaker] : selectedVoice;
-      annotations.push({ text: segments[i], speaker, voice });
     }
 
     parsedVoiceData = { segments, annotations };
@@ -532,25 +537,30 @@ async function parseBoth() {
     if (emotionContent) emotionContent.innerHTML = `<div class="spinner-sm"></div> 0/${segments.length}`;
     if (voiceContent) voiceContent.innerHTML = `<div class="spinner-sm"></div> 0/${segments.length}`;
 
+    const BATCH = 4;
     let lastSpeaker = null;
     let done = 0;
     const genre = document.getElementById('genreToneInput')?.value.trim();
 
-    for (let i = 0; i < segments.length; i++) {
-      const seg = segments[i];
-      const [emotionParsed, speaker] = await Promise.all([
-        analyseEmotion(seg, segments[i - 1], segments[i + 1], genre),
-        assignSpeaker(seg, speakerNames, lastSpeaker)
-      ]);
-
-      done++;
-      if (speaker) lastSpeaker = speaker;
+    for (let b = 0; b < segments.length; b += BATCH) {
+      const indices = Array.from({ length: Math.min(BATCH, segments.length - b) }, (_, k) => b + k);
+      const results = await Promise.all(indices.map(i =>
+        Promise.all([
+          analyseEmotion(segments[i], segments[i - 1], segments[i + 1], genre),
+          assignSpeaker(segments[i], speakerNames, lastSpeaker)
+        ])
+      ));
+      for (let k = 0; k < results.length; k++) {
+        const i = b + k;
+        const [emotionParsed, speaker] = results[k];
+        if (speaker) lastSpeaker = speaker;
+        const segVoice = speaker ? speakerMap[speaker] : selectedVoice;
+        emotionResults[i] = { text: segments[i], emotion: emotionParsed.emotion || 'neutral', instruction: emotionParsed.instruction || 'Read naturally.', voice: segVoice, speaker };
+        voiceAnnotations[i] = { text: segments[i], speaker, voice: segVoice };
+      }
+      done += results.length;
       if (emotionContent) emotionContent.innerHTML = `<div class="spinner-sm"></div> ${done}/${segments.length}`;
       if (voiceContent) voiceContent.innerHTML = `<div class="spinner-sm"></div> ${done}/${segments.length}`;
-
-      const segVoice = speaker ? speakerMap[speaker] : selectedVoice;
-      emotionResults[i] = { text: seg, emotion: emotionParsed.emotion || 'neutral', instruction: emotionParsed.instruction || 'Read naturally.', voice: segVoice, speaker };
-      voiceAnnotations[i] = { text: seg, speaker, voice: segVoice };
     }
 
     parsedEmotionData = { segments, results: emotionResults };

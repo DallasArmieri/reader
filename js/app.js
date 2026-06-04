@@ -263,15 +263,16 @@ function splitIntoChunks(text, maxLen) {
 // ── API Call ──────────────────────────────────────────
 async function fetchChunk(text, voiceInstruction, voiceOverride) {
   const apiSpeed = Math.min(4.0, Math.max(0.25, playbackSpeed));
+  const model = voicePlusEnabled ? 'gpt-4o-mini-tts' : selectedModel;
   const body = {
-    model: voicePlusEnabled ? 'gpt-4o-mini-tts' : selectedModel,
+    model,
     input: text,
     voice: voiceOverride || selectedVoice,
     response_format: 'mp3',
     speed: apiSpeed
   };
-  if (voicePlusEnabled && voiceInstruction) {
-    body.instructions = voiceInstruction;
+  if (model === 'gpt-4o-mini-tts') {
+    body.instructions = voiceInstruction || 'Read naturally and clearly at a measured pace.';
   }
   const response = await fetch('https://api.openai.com/v1/audio/speech', {
     method: 'POST',

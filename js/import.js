@@ -205,19 +205,6 @@ function handleFileUpload(input) {
 
 // ── URL Fetch ─────────────────────────────────────────
 
-async function fetchHtmlViaProxy(url) {
-  try {
-    const res = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url));
-    if (res.ok) {
-      const data = await res.json();
-      if (data.contents && data.contents.length > 100) return data.contents;
-    }
-  } catch(e) {}
-  const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
-  if (!res.ok) throw new Error('Failed to fetch page');
-  return await res.text();
-}
-
 function extractTextFromDoc(el) {
   const BLOCK = new Set(['P','DIV','H1','H2','H3','H4','H5','H6','LI','TD','TH',
     'BLOCKQUOTE','PRE','SECTION','ARTICLE','MAIN','FIGURE','FIGCAPTION','BR']);
@@ -280,12 +267,13 @@ async function fetchUrl() {
   btn.disabled = true;
   content.innerHTML = '<div class="spinner-sm"></div>';
   try {
-    const html = await fetchHtmlViaProxy(url);
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const title = doc.querySelector('h1')?.textContent?.trim() || doc.title || url;
-    const articleEl = extractArticle(doc);
-    const text = extractTextFromDoc(articleEl);
+    const res = await fetch('https://r.jina.ai/' + url, {
+      headers: { 'Accept': 'application/json' }
+    });
+    if (!res.ok) throw new Error('Failed to fetch page');
+    const data = await res.json();
+    const title = data.data?.title || url;
+    const text = stripMarkdown(data.data?.content || '');
     if (text.length < 100) throw new Error('Could not extract article text from this page');
     setTextValue(text);
     document.getElementById('urlInput').value = '';
