@@ -1,7 +1,7 @@
 // ── Core State ────────────────────────────────────────
 let OPENAI_KEY = localStorage.getItem('openai_key') || '';
 let selectedVoice = 'alloy';
-let selectedModel = 'tts-1-hd';
+let selectedModel = 'gpt-4o-mini-tts';
 let playbackSpeed = 1.0;
 let currentAudioUrl = null;
 let currentArticleId = null;
@@ -80,9 +80,7 @@ function saveKey() {
   document.getElementById('keyHint').className = 'key-hint saved';
 }
 
-function selectModel(el, model) {
-  document.querySelectorAll('.model-btn').forEach(c => c.classList.remove('selected'));
-  el.classList.add('selected');
+function selectModel(model) {
   selectedModel = model;
   updateCount();
   saveSettings();

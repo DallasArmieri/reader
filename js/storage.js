@@ -174,8 +174,8 @@ function loadSettings() {
 
     if (s.model) {
       selectedModel = s.model;
-      document.getElementById('model-hd')?.classList.toggle('selected', s.model === 'tts-1-hd');
-      document.getElementById('model-std')?.classList.toggle('selected', s.model === 'tts-1');
+      const el = document.getElementById('modelSelect');
+      if (el) el.value = s.model;
     }
 
     if (s.speed != null) {
